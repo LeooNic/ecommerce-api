@@ -3,12 +3,14 @@ Enhanced monitoring, health checks, and metrics for the application.
 """
 
 import time
+from typing import Any, Dict, Optional
+
 import psutil
-from typing import Dict, Any, Optional
-from sqlalchemy import text
 from fastapi import Depends
-from app.database import get_db
+from sqlalchemy import text
+
 from app.config import settings
+from app.database import get_db
 from app.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -45,15 +47,11 @@ class HealthChecker:
             return {
                 "status": "healthy",
                 "response_time_ms": round(query_time * 1000, 2),
-                "connection": "active"
+                "connection": "active",
             }
         except Exception as e:
             logger.error(f"Database health check failed: {e}")
-            return {
-                "status": "unhealthy",
-                "error": str(e),
-                "connection": "failed"
-            }
+            return {"status": "unhealthy", "error": str(e), "connection": "failed"}
 
     def check_system_resources(self) -> Dict[str, Any]:
         """
@@ -70,31 +68,33 @@ class HealthChecker:
             memory = psutil.virtual_memory()
 
             # Disk usage
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
 
             return {
                 "cpu": {
                     "usage_percent": cpu_percent,
-                    "status": "healthy" if cpu_percent < 80 else "warning"
+                    "status": "healthy" if cpu_percent < 80 else "warning",
                 },
                 "memory": {
                     "total_mb": round(memory.total / (1024 * 1024), 2),
                     "available_mb": round(memory.available / (1024 * 1024), 2),
                     "usage_percent": memory.percent,
-                    "status": "healthy" if memory.percent < 80 else "warning"
+                    "status": "healthy" if memory.percent < 80 else "warning",
                 },
                 "disk": {
                     "total_gb": round(disk.total / (1024 * 1024 * 1024), 2),
                     "free_gb": round(disk.free / (1024 * 1024 * 1024), 2),
                     "usage_percent": round((disk.used / disk.total) * 100, 2),
-                    "status": "healthy" if (disk.used / disk.total) < 0.8 else "warning"
-                }
+                    "status": (
+                        "healthy" if (disk.used / disk.total) < 0.8 else "warning"
+                    ),
+                },
             }
         except Exception as e:
             logger.error(f"System resource check failed: {e}")
             return {
                 "status": "error",
-                "message": f"Unable to check system resources: {e}"
+                "message": f"Unable to check system resources: {e}",
             }
 
     def get_application_info(self) -> Dict[str, Any]:
@@ -112,7 +112,7 @@ class HealthChecker:
             "uptime_seconds": round(uptime_seconds, 2),
             "uptime_human": self._format_uptime(uptime_seconds),
             "environment": "development" if settings.debug else "production",
-            "api_prefix": settings.api_v1_prefix
+            "api_prefix": settings.api_v1_prefix,
         }
 
     def _format_uptime(self, seconds: float) -> str:
@@ -159,9 +159,11 @@ class HealthChecker:
         overall_status = "healthy"
         if database_health.get("status") == "unhealthy":
             overall_status = "unhealthy"
-        elif (system_health.get("cpu", {}).get("status") == "warning" or
-              system_health.get("memory", {}).get("status") == "warning" or
-              system_health.get("disk", {}).get("status") == "warning"):
+        elif (
+            system_health.get("cpu", {}).get("status") == "warning"
+            or system_health.get("memory", {}).get("status") == "warning"
+            or system_health.get("disk", {}).get("status") == "warning"
+        ):
             overall_status = "warning"
 
         return {
@@ -169,7 +171,7 @@ class HealthChecker:
             "timestamp": time.time(),
             "application": app_info,
             "database": database_health,
-            "system": system_health
+            "system": system_health,
         }
 
 
@@ -218,9 +220,11 @@ class MetricsCollector:
         if self.response_times:
             response_stats = {
                 "count": len(self.response_times),
-                "average_ms": round(sum(self.response_times) / len(self.response_times) * 1000, 2),
+                "average_ms": round(
+                    sum(self.response_times) / len(self.response_times) * 1000, 2
+                ),
                 "min_ms": round(min(self.response_times) * 1000, 2),
-                "max_ms": round(max(self.response_times) * 1000, 2)
+                "max_ms": round(max(self.response_times) * 1000, 2),
             }
 
         return {
@@ -228,11 +232,16 @@ class MetricsCollector:
             "requests": {
                 "total": self.request_count,
                 "errors": self.error_count,
-                "success_rate": round((self.request_count - self.error_count) / max(self.request_count, 1) * 100, 2),
-                "requests_per_second": round(self.request_count / max(uptime, 1), 2)
+                "success_rate": round(
+                    (self.request_count - self.error_count)
+                    / max(self.request_count, 1)
+                    * 100,
+                    2,
+                ),
+                "requests_per_second": round(self.request_count / max(uptime, 1), 2),
             },
             "response_times": response_stats,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
 

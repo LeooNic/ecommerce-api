@@ -6,6 +6,7 @@ import logging
 import logging.config
 import sys
 from typing import Any, Dict
+
 import structlog
 from pythonjsonlogger import jsonlogger
 
@@ -24,11 +25,9 @@ def configure_logging() -> None:
         "formatters": {
             "json": {
                 "()": jsonlogger.JsonFormatter,
-                "format": "%(asctime)s %(name)s %(levelname)s %(message)s"
+                "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
             },
-            "plain": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            },
+            "plain": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
         },
         "handlers": {
             "console": {
@@ -65,6 +64,7 @@ def configure_logging() -> None:
 
     # Create logs directory if it doesn't exist
     import os
+
     os.makedirs("logs", exist_ok=True)
 
     # Apply logging configuration
@@ -80,8 +80,11 @@ def configure_logging() -> None:
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer() if not settings.debug
-            else structlog.dev.ConsoleRenderer(),
+            (
+                structlog.processors.JSONRenderer()
+                if not settings.debug
+                else structlog.dev.ConsoleRenderer()
+            ),
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),

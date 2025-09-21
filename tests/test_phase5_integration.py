@@ -2,16 +2,18 @@
 Integration tests for Phase 5 advanced features.
 """
 
-import pytest
 import asyncio
 import time
-from httpx import AsyncClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 from faker import Faker
-from app.main import app
-from app.monitoring import health_checker, metrics_collector
+from httpx import AsyncClient
+
 from app.email_service import email_service
 from app.logging_config import get_logger
+from app.main import app
+from app.monitoring import health_checker, metrics_collector
 
 fake = Faker()
 logger = get_logger(__name__)
@@ -24,9 +26,9 @@ class TestStructuredLogging:
         """Test that logger is properly configured."""
         test_logger = get_logger("test_logger")
         assert test_logger is not None
-        assert hasattr(test_logger, 'info')
-        assert hasattr(test_logger, 'error')
-        assert hasattr(test_logger, 'warning')
+        assert hasattr(test_logger, "info")
+        assert hasattr(test_logger, "error")
+        assert hasattr(test_logger, "warning")
 
     @pytest.mark.asyncio
     async def test_request_logging(self, client: AsyncClient):
@@ -67,10 +69,7 @@ class TestRateLimiting:
     async def test_auth_rate_limiting(self, client: AsyncClient):
         """Test that authentication endpoints have stricter rate limits."""
         # Make multiple rapid requests to login endpoint
-        login_data = {
-            "email": "nonexistent@example.com",
-            "password": "wrongpassword"
-        }
+        login_data = {"email": "nonexistent@example.com", "password": "wrongpassword"}
 
         responses = []
         for _ in range(3):
@@ -206,8 +205,7 @@ class TestEmailNotifications:
     async def test_send_welcome_email(self):
         """Test sending welcome email."""
         result = await email_service.send_welcome_email(
-            user_email="test@example.com",
-            user_name="Test User"
+            user_email="test@example.com", user_name="Test User"
         )
         assert result is True
 
@@ -219,19 +217,11 @@ class TestEmailNotifications:
             "created_at": "2024-01-01T10:00:00",
             "total_amount": 99.99,
             "status": "confirmed",
-            "items": [
-                {
-                    "product_name": "Test Product",
-                    "quantity": 2,
-                    "price": 49.99
-                }
-            ]
+            "items": [{"product_name": "Test Product", "quantity": 2, "price": 49.99}],
         }
 
         result = await email_service.send_order_confirmation(
-            user_email="test@example.com",
-            user_name="Test User",
-            order_data=order_data
+            user_email="test@example.com", user_name="Test User", order_data=order_data
         )
         assert result is True
 
@@ -241,7 +231,7 @@ class TestEmailNotifications:
         result = await email_service.send_password_reset_email(
             user_email="test@example.com",
             user_name="Test User",
-            reset_token="test-token-123"
+            reset_token="test-token-123",
         )
         assert result is True
 
@@ -251,12 +241,11 @@ class TestEmailNotifications:
         details = {
             "event": "new_user_registration",
             "user_id": 123,
-            "timestamp": "2024-01-01T10:00:00"
+            "timestamp": "2024-01-01T10:00:00",
         }
 
         result = await email_service.send_admin_notification(
-            notification_type="User Registration",
-            details=details
+            notification_type="User Registration", details=details
         )
         assert result is True
 
@@ -269,8 +258,9 @@ class TestEmailNotifications:
 
     def test_email_templates(self):
         """Test email template rendering."""
-        from app.email_service import EmailTemplates
         from jinja2 import Template
+
+        from app.email_service import EmailTemplates
 
         # Test welcome template
         template = Template(EmailTemplates.WELCOME_TEMPLATE)
@@ -278,7 +268,7 @@ class TestEmailNotifications:
             app_name="Test App",
             user_name="Test User",
             user_email="test@example.com",
-            registration_date="January 1, 2024"
+            registration_date="January 1, 2024",
         )
         assert "Test App" in rendered
         assert "Test User" in rendered
@@ -296,7 +286,7 @@ class TestEndToEndWorkflows:
             "password": "securepassword123",
             "first_name": fake.first_name(),
             "last_name": fake.last_name(),
-            "role": "customer"
+            "role": "customer",
         }
 
         # Clear sent emails
@@ -312,7 +302,9 @@ class TestEndToEndWorkflows:
 
         # Check that welcome email was "sent"
         sent_emails = email_service.email_service.get_sent_emails()
-        welcome_emails = [email for email in sent_emails if "Welcome" in email["subject"]]
+        welcome_emails = [
+            email for email in sent_emails if "Welcome" in email["subject"]
+        ]
         assert len(welcome_emails) >= 1
 
     @pytest.mark.asyncio
@@ -365,10 +357,10 @@ class TestEndToEndWorkflows:
         assert response.status_code == 404
 
         # Test invalid authentication
-        response = await client.post("/api/v1/auth/login", json={
-            "email": "invalid@example.com",
-            "password": "wrongpassword"
-        })
+        response = await client.post(
+            "/api/v1/auth/login",
+            json={"email": "invalid@example.com", "password": "wrongpassword"},
+        )
         assert response.status_code == 401
 
         # Metrics should track errors

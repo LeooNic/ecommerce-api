@@ -24,7 +24,7 @@ class TestCategoryService:
             name="Electronics",
             description="Electronic devices and accessories",
             slug="electronics",
-            is_active=True
+            is_active=True,
         )
 
         category = CategoryService.create_category(db_session, category_data)
@@ -42,7 +42,7 @@ class TestCategoryService:
             name="Electronics",
             description="Electronic devices",
             slug="electronics",
-            is_active=True
+            is_active=True,
         )
 
         # Create first category
@@ -53,7 +53,7 @@ class TestCategoryService:
             name="Electronics",
             description="Different description",
             slug="electronics-2",
-            is_active=True
+            is_active=True,
         )
 
         with pytest.raises(Exception):
@@ -65,7 +65,7 @@ class TestCategoryService:
             name="Electronics",
             description="Electronic devices",
             slug="electronics",
-            is_active=True
+            is_active=True,
         )
 
         # Create first category
@@ -76,7 +76,7 @@ class TestCategoryService:
             name="Electronics Store",
             description="Different description",
             slug="electronics",
-            is_active=True
+            is_active=True,
         )
 
         with pytest.raises(Exception):
@@ -88,11 +88,13 @@ class TestCategoryService:
             name="Books",
             description="Books and literature",
             slug="books",
-            is_active=True
+            is_active=True,
         )
 
         created_category = CategoryService.create_category(db_session, category_data)
-        retrieved_category = CategoryService.get_category(db_session, created_category.id)
+        retrieved_category = CategoryService.get_category(
+            db_session, created_category.id
+        )
 
         assert retrieved_category is not None
         assert retrieved_category.id == created_category.id
@@ -109,11 +111,13 @@ class TestCategoryService:
             name="Clothing",
             description="Apparel and accessories",
             slug="clothing",
-            is_active=True
+            is_active=True,
         )
 
         created_category = CategoryService.create_category(db_session, category_data)
-        retrieved_category = CategoryService.get_category_by_slug(db_session, "clothing")
+        retrieved_category = CategoryService.get_category_by_slug(
+            db_session, "clothing"
+        )
 
         assert retrieved_category is not None
         assert retrieved_category.id == created_category.id
@@ -127,7 +131,7 @@ class TestCategoryService:
                 name=f"Category {i}",
                 description=f"Description {i}",
                 slug=f"category-{i}",
-                is_active=True
+                is_active=True,
             )
             CategoryService.create_category(db_session, category_data)
 
@@ -153,7 +157,7 @@ class TestCategoryService:
             name="Active Category",
             description="Active category",
             slug="active-category",
-            is_active=True
+            is_active=True,
         )
         CategoryService.create_category(db_session, active_data)
 
@@ -162,7 +166,7 @@ class TestCategoryService:
             name="Inactive Category",
             description="Inactive category",
             slug="inactive-category",
-            is_active=False
+            is_active=False,
         )
         CategoryService.create_category(db_session, inactive_data)
 
@@ -179,9 +183,24 @@ class TestCategoryService:
         """Test searching categories."""
         # Create test categories
         categories = [
-            CategoryCreate(name="Electronics", description="Electronic devices", slug="electronics", is_active=True),
-            CategoryCreate(name="Books", description="Books and literature", slug="books", is_active=True),
-            CategoryCreate(name="Electronic Music", description="Music electronics", slug="electronic-music", is_active=True),
+            CategoryCreate(
+                name="Electronics",
+                description="Electronic devices",
+                slug="electronics",
+                is_active=True,
+            ),
+            CategoryCreate(
+                name="Books",
+                description="Books and literature",
+                slug="books",
+                is_active=True,
+            ),
+            CategoryCreate(
+                name="Electronic Music",
+                description="Music electronics",
+                slug="electronic-music",
+                is_active=True,
+            ),
         ]
 
         for category_data in categories:
@@ -202,16 +221,14 @@ class TestCategoryService:
             name="Original Name",
             description="Original description",
             slug="original-slug",
-            is_active=True
+            is_active=True,
         )
 
         created_category = CategoryService.create_category(db_session, category_data)
 
         # Update category
         update_data = CategoryUpdate(
-            name="Updated Name",
-            description="Updated description",
-            is_active=False
+            name="Updated Name", description="Updated description", is_active=False
         )
 
         updated_category = CategoryService.update_category(
@@ -236,7 +253,7 @@ class TestCategoryService:
             name="To Delete",
             description="Category to delete",
             slug="to-delete",
-            is_active=True
+            is_active=True,
         )
 
         created_category = CategoryService.create_category(db_session, category_data)
@@ -286,13 +303,11 @@ class TestCategoryEndpoints:
             "name": "Test Category",
             "description": "Test description",
             "slug": "test-category",
-            "is_active": True
+            "is_active": True,
         }
 
         response = client.post(
-            "/api/v1/categories/",
-            json=category_data,
-            headers=admin_auth_headers
+            "/api/v1/categories/", json=category_data, headers=admin_auth_headers
         )
 
         assert response.status_code == 201
@@ -307,13 +322,11 @@ class TestCategoryEndpoints:
             "name": "Test Category",
             "description": "Test description",
             "slug": "test-category",
-            "is_active": True
+            "is_active": True,
         }
 
         response = client.post(
-            "/api/v1/categories/",
-            json=category_data,
-            headers=auth_headers
+            "/api/v1/categories/", json=category_data, headers=auth_headers
         )
 
         assert response.status_code == 403
@@ -324,7 +337,7 @@ class TestCategoryEndpoints:
             "name": "Test Category",
             "description": "Test description",
             "slug": "test-category",
-            "is_active": True
+            "is_active": True,
         }
 
         response = client.post("/api/v1/categories/", json=category_data)
@@ -337,7 +350,7 @@ class TestCategoryEndpoints:
             name="Public Category",
             description="Public description",
             slug="public-category",
-            is_active=True
+            is_active=True,
         )
         CategoryService.create_category(db_session, category_data)
 
@@ -350,7 +363,9 @@ class TestCategoryEndpoints:
         assert "page" in data
         assert len(data["items"]) >= 1
 
-    def test_get_categories_with_pagination(self, client: TestClient, db_session: Session):
+    def test_get_categories_with_pagination(
+        self, client: TestClient, db_session: Session
+    ):
         """Test getting categories with pagination parameters."""
         response = client.get("/api/v1/categories/?skip=0&limit=5")
 
@@ -366,7 +381,7 @@ class TestCategoryEndpoints:
             name="Searchable Category",
             description="Searchable description",
             slug="searchable-category",
-            is_active=True
+            is_active=True,
         )
         CategoryService.create_category(db_session, category_data)
 
@@ -382,7 +397,7 @@ class TestCategoryEndpoints:
             name="Get by ID",
             description="Get by ID description",
             slug="get-by-id",
-            is_active=True
+            is_active=True,
         )
         created_category = CategoryService.create_category(db_session, category_data)
 
@@ -399,7 +414,7 @@ class TestCategoryEndpoints:
             name="Get by Slug",
             description="Get by slug description",
             slug="get-by-slug",
-            is_active=True
+            is_active=True,
         )
         CategoryService.create_category(db_session, category_data)
 
@@ -410,7 +425,9 @@ class TestCategoryEndpoints:
         assert data["slug"] == "get-by-slug"
         assert data["name"] == "Get by Slug"
 
-    def test_get_active_categories_endpoint(self, client: TestClient, db_session: Session):
+    def test_get_active_categories_endpoint(
+        self, client: TestClient, db_session: Session
+    ):
         """Test getting active categories endpoint."""
         response = client.get("/api/v1/categories/active")
 
@@ -418,27 +435,26 @@ class TestCategoryEndpoints:
         data = response.json()
         assert isinstance(data, list)
 
-    def test_update_category_admin(self, client: TestClient, admin_auth_headers: dict, db_session: Session):
+    def test_update_category_admin(
+        self, client: TestClient, admin_auth_headers: dict, db_session: Session
+    ):
         """Test updating category as admin."""
         # Create category
         category_data = CategoryCreate(
             name="Original Name",
             description="Original description",
             slug="original-slug",
-            is_active=True
+            is_active=True,
         )
         created_category = CategoryService.create_category(db_session, category_data)
 
         # Update category
-        update_data = {
-            "name": "Updated Name",
-            "description": "Updated description"
-        }
+        update_data = {"name": "Updated Name", "description": "Updated description"}
 
         response = client.put(
             f"/api/v1/categories/{created_category.id}",
             json=update_data,
-            headers=admin_auth_headers
+            headers=admin_auth_headers,
         )
 
         assert response.status_code == 200
@@ -446,12 +462,12 @@ class TestCategoryEndpoints:
         assert data["name"] == "Updated Name"
         assert data["description"] == "Updated description"
 
-    def test_update_category_non_admin(self, client: TestClient, auth_headers: dict, db_session: Session):
+    def test_update_category_non_admin(
+        self, client: TestClient, auth_headers: dict, db_session: Session
+    ):
         """Test updating category as non-admin user."""
         category_data = CategoryCreate(
-            name="Test Category",
-            slug="test-category",
-            is_active=True
+            name="Test Category", slug="test-category", is_active=True
         )
         created_category = CategoryService.create_category(db_session, category_data)
 
@@ -460,39 +476,37 @@ class TestCategoryEndpoints:
         response = client.put(
             f"/api/v1/categories/{created_category.id}",
             json=update_data,
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert response.status_code == 403
 
-    def test_delete_category_admin(self, client: TestClient, admin_auth_headers: dict, db_session: Session):
+    def test_delete_category_admin(
+        self, client: TestClient, admin_auth_headers: dict, db_session: Session
+    ):
         """Test deleting category as admin."""
         category_data = CategoryCreate(
-            name="To Delete",
-            slug="to-delete",
-            is_active=True
+            name="To Delete", slug="to-delete", is_active=True
         )
         created_category = CategoryService.create_category(db_session, category_data)
 
         response = client.delete(
-            f"/api/v1/categories/{created_category.id}",
-            headers=admin_auth_headers
+            f"/api/v1/categories/{created_category.id}", headers=admin_auth_headers
         )
 
         assert response.status_code == 204
 
-    def test_delete_category_non_admin(self, client: TestClient, auth_headers: dict, db_session: Session):
+    def test_delete_category_non_admin(
+        self, client: TestClient, auth_headers: dict, db_session: Session
+    ):
         """Test deleting category as non-admin user."""
         category_data = CategoryCreate(
-            name="Test Category",
-            slug="test-category",
-            is_active=True
+            name="Test Category", slug="test-category", is_active=True
         )
         created_category = CategoryService.create_category(db_session, category_data)
 
         response = client.delete(
-            f"/api/v1/categories/{created_category.id}",
-            headers=auth_headers
+            f"/api/v1/categories/{created_category.id}", headers=auth_headers
         )
 
         assert response.status_code == 403
@@ -502,23 +516,22 @@ class TestCategoryEndpoints:
         response = client.get("/api/v1/categories/999")
         assert response.status_code == 404
 
-    def test_update_nonexistent_category(self, client: TestClient, admin_auth_headers: dict):
+    def test_update_nonexistent_category(
+        self, client: TestClient, admin_auth_headers: dict
+    ):
         """Test updating non-existent category."""
         update_data = {"name": "Updated Name"}
 
         response = client.put(
-            "/api/v1/categories/999",
-            json=update_data,
-            headers=admin_auth_headers
+            "/api/v1/categories/999", json=update_data, headers=admin_auth_headers
         )
 
         assert response.status_code == 404
 
-    def test_delete_nonexistent_category(self, client: TestClient, admin_auth_headers: dict):
+    def test_delete_nonexistent_category(
+        self, client: TestClient, admin_auth_headers: dict
+    ):
         """Test deleting non-existent category."""
-        response = client.delete(
-            "/api/v1/categories/999",
-            headers=admin_auth_headers
-        )
+        response = client.delete("/api/v1/categories/999", headers=admin_auth_headers)
 
         assert response.status_code == 404

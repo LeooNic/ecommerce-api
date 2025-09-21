@@ -8,10 +8,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.schemas.cart import (
-    CartResponse,
     AddToCartRequest,
+    CartResponse,
+    CartSummary,
     UpdateCartItemRequest,
-    CartSummary
 )
 from app.services.cart_service import CartService
 from app.utils.auth import get_current_active_user
@@ -21,8 +21,7 @@ router = APIRouter(prefix="/cart", tags=["cart"])
 
 @router.get("/", response_model=CartResponse)
 async def get_cart(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
 ):
     """
     Get current user's cart.
@@ -43,7 +42,7 @@ async def get_cart(
             is_empty=True,
             items=[],
             created_at=None,
-            updated_at=None
+            updated_at=None,
         )
 
     return cart_service._cart_to_response(cart)
@@ -53,7 +52,7 @@ async def get_cart(
 async def add_to_cart(
     request: AddToCartRequest,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Add product to cart.
@@ -76,7 +75,7 @@ async def update_cart_item(
     product_id: int,
     request: UpdateCartItemRequest,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update cart item quantity.
@@ -99,7 +98,7 @@ async def update_cart_item(
 async def remove_from_cart(
     product_id: int,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Remove product from cart.
@@ -119,8 +118,7 @@ async def remove_from_cart(
 
 @router.delete("/clear", response_model=CartResponse)
 async def clear_cart(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
 ):
     """
     Clear all items from cart.
@@ -134,8 +132,7 @@ async def clear_cart(
 
 @router.get("/summary", response_model=CartSummary)
 async def get_cart_summary(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
 ):
     """
     Get cart summary with totals.

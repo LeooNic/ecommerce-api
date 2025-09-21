@@ -4,7 +4,8 @@ Category model definition.
 
 from datetime import datetime
 from typing import TYPE_CHECKING
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -26,7 +27,9 @@ class Category(Base):
     slug = Column(String(120), unique=True, index=True, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Relationships
     products = relationship("Product", back_populates="category", lazy="dynamic")
@@ -48,4 +51,4 @@ class Category(Base):
         Returns:
             int: Number of products in category
         """
-        return self.products.count() if hasattr(self, 'products') else 0
+        return self.products.count() if hasattr(self, "products") else 0

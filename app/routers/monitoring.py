@@ -2,15 +2,17 @@
 Monitoring and health check endpoints for the application.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.orm import Session
 from slowapi import Limiter
-from app.database import get_db
-from app.monitoring import health_checker, metrics_collector
-from app.rate_limiting import limiter, RateLimitConfig, check_rate_limit_status
+from sqlalchemy.orm import Session
+
 from app.config import settings
+from app.database import get_db
 from app.logging_config import get_logger
+from app.monitoring import health_checker, metrics_collector
+from app.rate_limiting import RateLimitConfig, check_rate_limit_status, limiter
 
 logger = get_logger(__name__)
 
@@ -30,7 +32,7 @@ async def health_check(request: Request):
         "status": "healthy",
         "app": settings.app_name,
         "version": settings.version,
-        "environment": "development" if settings.debug else "production"
+        "environment": "development" if settings.debug else "production",
     }
 
 
@@ -54,7 +56,7 @@ async def detailed_health_check(request: Request, db: Session = Depends(get_db))
         logger.info(
             "health_check_performed",
             status=health_data["status"],
-            timestamp=health_data["timestamp"]
+            timestamp=health_data["timestamp"],
         )
 
         return health_data
@@ -62,7 +64,7 @@ async def detailed_health_check(request: Request, db: Session = Depends(get_db))
         logger.error(f"Health check failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Health check failed"
+            detail="Health check failed",
         )
 
 
@@ -80,8 +82,7 @@ async def get_metrics(request: Request):
     """
     if not settings.enable_metrics:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Metrics endpoint is disabled"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Metrics endpoint is disabled"
         )
 
     try:
@@ -94,7 +95,7 @@ async def get_metrics(request: Request):
         logger.error(f"Failed to get metrics: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve metrics"
+            detail="Failed to retrieve metrics",
         )
 
 
@@ -117,5 +118,5 @@ async def get_rate_limit_status(request: Request):
         logger.error(f"Failed to get rate limit status: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve rate limit status"
+            detail="Failed to retrieve rate limit status",
         )

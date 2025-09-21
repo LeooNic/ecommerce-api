@@ -5,11 +5,13 @@ switched to real email providers in production.
 """
 
 import asyncio
-from typing import Dict, List, Optional, Any
+import json
 from dataclasses import dataclass
 from datetime import datetime
-import json
+from typing import Any, Dict, List, Optional
+
 from jinja2 import Template
+
 from app.config import settings
 from app.logging_config import get_logger
 
@@ -21,6 +23,7 @@ class EmailMessage:
     """
     Email message data structure.
     """
+
     to: str
     subject: str
     body: str
@@ -145,11 +148,12 @@ class SimulatedEmailService:
             email_data = {
                 "timestamp": datetime.now().isoformat(),
                 "to": message.to,
-                "from": message.from_email or f"noreply@{settings.app_name.lower().replace(' ', '')}.com",
+                "from": message.from_email
+                or f"noreply@{settings.app_name.lower().replace(' ', '')}.com",
                 "subject": message.subject,
                 "body": message.body,
                 "html_body": message.html_body,
-                "reply_to": message.reply_to
+                "reply_to": message.reply_to,
             }
 
             # Store in memory
@@ -162,7 +166,7 @@ class SimulatedEmailService:
                 "email_sent_simulated",
                 to=message.to,
                 subject=message.subject,
-                timestamp=email_data["timestamp"]
+                timestamp=email_data["timestamp"],
             )
 
             return True
@@ -180,12 +184,13 @@ class SimulatedEmailService:
         """
         try:
             import os
+
             os.makedirs("logs", exist_ok=True)
 
             # Read existing emails
             existing_emails = []
             try:
-                with open(self.email_log_file, 'r', encoding='utf-8') as f:
+                with open(self.email_log_file, "r", encoding="utf-8") as f:
                     existing_emails = json.load(f)
             except (FileNotFoundError, json.JSONDecodeError):
                 pass
@@ -198,7 +203,7 @@ class SimulatedEmailService:
                 existing_emails = existing_emails[-100:]
 
             # Write back to file
-            with open(self.email_log_file, 'w', encoding='utf-8') as f:
+            with open(self.email_log_file, "w", encoding="utf-8") as f:
                 json.dump(existing_emails, f, indent=2, ensure_ascii=False)
 
         except Exception as e:
@@ -242,19 +247,21 @@ class EmailNotificationService:
             app_name=settings.app_name,
             user_name=user_name,
             user_email=user_email,
-            registration_date=datetime.now().strftime("%B %d, %Y")
+            registration_date=datetime.now().strftime("%B %d, %Y"),
         )
 
         message = EmailMessage(
             to=user_email,
             subject=f"Welcome to {settings.app_name}!",
             body=f"Welcome {user_name}! Thank you for registering with {settings.app_name}.",
-            html_body=html_body
+            html_body=html_body,
         )
 
         return await self.email_service.send_email(message)
 
-    async def send_order_confirmation(self, user_email: str, user_name: str, order_data: Dict[str, Any]) -> bool:
+    async def send_order_confirmation(
+        self, user_email: str, user_name: str, order_data: Dict[str, Any]
+    ) -> bool:
         """
         Send order confirmation email.
 
@@ -271,22 +278,26 @@ class EmailNotificationService:
             app_name=settings.app_name,
             user_name=user_name,
             order_id=order_data.get("id"),
-            order_date=order_data.get("created_at", datetime.now()).strftime("%B %d, %Y"),
+            order_date=order_data.get("created_at", datetime.now()).strftime(
+                "%B %d, %Y"
+            ),
             total_amount=order_data.get("total_amount", 0),
             order_status=order_data.get("status", "Processing"),
-            items=order_data.get("items", [])
+            items=order_data.get("items", []),
         )
 
         message = EmailMessage(
             to=user_email,
             subject=f"Order Confirmation #{order_data.get('id')} - {settings.app_name}",
             body=f"Thank you for your order #{order_data.get('id')}!",
-            html_body=html_body
+            html_body=html_body,
         )
 
         return await self.email_service.send_email(message)
 
-    async def send_password_reset_email(self, user_email: str, user_name: str, reset_token: str) -> bool:
+    async def send_password_reset_email(
+        self, user_email: str, user_name: str, reset_token: str
+    ) -> bool:
         """
         Send password reset email.
 
@@ -299,26 +310,31 @@ class EmailNotificationService:
             True if email was sent successfully
         """
         from datetime import timedelta
-        expiry_time = (datetime.now() + timedelta(hours=1)).strftime("%B %d, %Y at %I:%M %p")
+
+        expiry_time = (datetime.now() + timedelta(hours=1)).strftime(
+            "%B %d, %Y at %I:%M %p"
+        )
 
         template = Template(EmailTemplates.PASSWORD_RESET_TEMPLATE)
         html_body = template.render(
             app_name=settings.app_name,
             user_name=user_name,
             reset_token=reset_token,
-            expiry_time=expiry_time
+            expiry_time=expiry_time,
         )
 
         message = EmailMessage(
             to=user_email,
             subject=f"Password Reset Request - {settings.app_name}",
             body=f"Password reset requested for {user_email}. Token: {reset_token}",
-            html_body=html_body
+            html_body=html_body,
         )
 
         return await self.email_service.send_email(message)
 
-    async def send_admin_notification(self, notification_type: str, details: Dict[str, Any]) -> bool:
+    async def send_admin_notification(
+        self, notification_type: str, details: Dict[str, Any]
+    ) -> bool:
         """
         Send notification to administrators.
 
@@ -329,21 +345,21 @@ class EmailNotificationService:
         Returns:
             True if email was sent successfully
         """
-        admin_email = getattr(settings, 'admin_email', 'admin@example.com')
+        admin_email = getattr(settings, "admin_email", "admin@example.com")
 
         template = Template(EmailTemplates.ADMIN_NOTIFICATION_TEMPLATE)
         html_body = template.render(
             app_name=settings.app_name,
             notification_type=notification_type,
             details=details,
-            timestamp=datetime.now().strftime("%B %d, %Y at %I:%M %p")
+            timestamp=datetime.now().strftime("%B %d, %Y at %I:%M %p"),
         )
 
         message = EmailMessage(
             to=admin_email,
             subject=f"Admin Notification: {notification_type} - {settings.app_name}",
             body=f"Admin notification: {notification_type}",
-            html_body=html_body
+            html_body=html_body,
         )
 
         return await self.email_service.send_email(message)

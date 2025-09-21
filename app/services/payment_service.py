@@ -2,11 +2,11 @@
 Payment service for processing simulated payments.
 """
 
-import uuid
 import time
+import uuid
 from decimal import Decimal
-from typing import Dict, Any
 from random import random
+from typing import Any, Dict
 
 from app.models.order import PaymentStatus
 from app.schemas.order import PaymentRequest, PaymentResponse
@@ -23,7 +23,7 @@ class PaymentService:
         "debit_card": {"success_rate": 0.92, "processing_time": 1.5},
         "paypal": {"success_rate": 0.98, "processing_time": 3.0},
         "bank_transfer": {"success_rate": 0.99, "processing_time": 5.0},
-        "crypto": {"success_rate": 0.85, "processing_time": 10.0}
+        "crypto": {"success_rate": 0.85, "processing_time": 10.0},
     }
 
     def __init__(self):
@@ -51,7 +51,7 @@ class PaymentService:
                 transaction_id=transaction_id,
                 status=PaymentStatus.FAILED,
                 amount=payment_request.amount,
-                message="Unsupported payment method"
+                message="Unsupported payment method",
             )
 
         # Simular tiempo de procesamiento
@@ -68,7 +68,7 @@ class PaymentService:
                 transaction_id=transaction_id,
                 status=PaymentStatus.COMPLETED,
                 amount=payment_request.amount,
-                message=f"Payment processed successfully via {payment_request.payment_method}"
+                message=f"Payment processed successfully via {payment_request.payment_method}",
             )
         else:
             # Simulamos diferentes tipos de fallos
@@ -77,7 +77,7 @@ class PaymentService:
                 "Card declined",
                 "Network timeout",
                 "Invalid card details",
-                "Payment limit exceeded"
+                "Payment limit exceeded",
             ]
             failure_reason = failure_reasons[int(random() * len(failure_reasons))]
 
@@ -85,7 +85,7 @@ class PaymentService:
                 transaction_id=transaction_id,
                 status=PaymentStatus.FAILED,
                 amount=payment_request.amount,
-                message=f"Payment failed: {failure_reason}"
+                message=f"Payment failed: {failure_reason}",
             )
 
     def validate_payment_method(self, method: str) -> bool:
@@ -111,7 +111,7 @@ class PaymentService:
             method: {
                 "name": method.replace("_", " ").title(),
                 "success_rate": config["success_rate"],
-                "avg_processing_time": f"{config['processing_time']}s"
+                "avg_processing_time": f"{config['processing_time']}s",
             }
             for method, config in self.PAYMENT_METHODS.items()
         }
@@ -138,12 +138,12 @@ class PaymentService:
                 transaction_id=refund_id,
                 status=PaymentStatus.REFUNDED,
                 amount=amount,
-                message=f"Refund processed successfully for transaction {transaction_id}"
+                message=f"Refund processed successfully for transaction {transaction_id}",
             )
         else:
             return PaymentResponse(
                 transaction_id=refund_id,
                 status=PaymentStatus.FAILED,
                 amount=amount,
-                message=f"Refund failed for transaction {transaction_id}"
+                message=f"Refund failed for transaction {transaction_id}",
             )

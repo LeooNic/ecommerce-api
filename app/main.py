@@ -4,6 +4,7 @@ Main FastAPI application module.
 
 import time
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -11,15 +12,15 @@ from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.database import create_tables
-from app.logging_config import configure_logging, LoggingMiddleware, get_logger
-from app.rate_limiting import limiter, rate_limit_exceeded_handler
+from app.logging_config import LoggingMiddleware, configure_logging, get_logger
 from app.monitoring import metrics_collector
+from app.rate_limiting import limiter, rate_limit_exceeded_handler
 from app.routers.auth import router as auth_router
-from app.routers.categories import router as categories_router
-from app.routers.products import router as products_router
 from app.routers.cart import router as cart_router
-from app.routers.orders import router as orders_router
+from app.routers.categories import router as categories_router
 from app.routers.monitoring import router as monitoring_router
+from app.routers.orders import router as orders_router
+from app.routers.products import router as products_router
 
 # Configure logging
 configure_logging()
@@ -82,7 +83,7 @@ app = FastAPI(
             "name": "monitoring",
             "description": "System monitoring and health check endpoints. Monitor application performance and status.",
         },
-    ]
+    ],
 )
 
 # Add rate limiting
@@ -99,7 +100,7 @@ app.add_middleware(
     allow_credentials=settings.cors_allow_credentials,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],
-    expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"]
+    expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
 )
 
 
@@ -126,6 +127,7 @@ async def metrics_middleware(request: Request, call_next):
         metrics_collector.increment_error_count()
         raise
 
+
 # Include routers
 app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(categories_router, prefix=settings.api_v1_prefix)
@@ -135,8 +137,6 @@ app.include_router(orders_router, prefix=settings.api_v1_prefix)
 app.include_router(monitoring_router, prefix=settings.api_v1_prefix)
 
 
-
-
 @app.get("/")
 @limiter.limit("200/minute")
 async def root(request: Request):
@@ -144,7 +144,7 @@ async def root(request: Request):
     Root endpoint with rate limiting.
 
     Returns:
-        dict: Welcome message with Phase 5 features
+        dict: Welcome message with API features
     """
     logger.info("root_endpoint_accessed")
     return {
@@ -156,12 +156,10 @@ async def root(request: Request):
             "rate_limiting": "enabled",
             "monitoring": "enabled",
             "cors": "configured",
-            "email_notifications": "simulated"
+            "email_notifications": "simulated",
         },
-        "phase": "6 - Production Ready"
+        "status_info": "Production Ready",
     }
-
-
 
 
 if __name__ == "__main__":
@@ -173,5 +171,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=settings.debug,
-        log_config=None  # Use our custom logging configuration
+        log_config=None,  # Use our custom logging configuration
     )

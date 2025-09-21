@@ -5,14 +5,15 @@ Cart and CartItem model definitions.
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, DECIMAL
+
+from sqlalchemy import DECIMAL, Column, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.user import User
     from app.models.product import Product
+    from app.models.user import User
 
 
 class Cart(Base):
@@ -24,14 +25,18 @@ class Cart(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Foreign Keys
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="cart")
-    items = relationship("CartItem", back_populates="cart", cascade="all, delete-orphan")
+    items = relationship(
+        "CartItem", back_populates="cart", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """
@@ -84,7 +89,9 @@ class CartItem(Base):
     quantity = Column(Integer, nullable=False)
     unit_price = Column(DECIMAL(10, 2), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Foreign Keys
     cart_id = Column(Integer, ForeignKey("carts.id"), nullable=False)

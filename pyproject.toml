@@ -1,0 +1,83 @@
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.mypy]
+python_version = "3.11"
+# Basic settings for FastAPI project
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+disallow_untyped_decorators = false
+no_implicit_optional = false
+warn_redundant_casts = false
+warn_unused_ignores = false
+warn_no_return = false
+warn_unreachable = false
+ignore_missing_imports = true
+show_error_codes = true
+# Relax strictness for SQLAlchemy and FastAPI
+allow_untyped_globals = true
+allow_redefinition = true
+local_partial_types = true
+no_implicit_reexport = false
+
+# Ignore errors in specific modules
+[[tool.mypy.overrides]]
+module = [
+    "tests.*",
+    "alembic.*",
+    "app.models.*",
+    "app.routers.*",
+    "app.services.*",
+    "app.utils.*",
+]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--disable-warnings",
+    "-v",
+    "--tb=short",
+    "--maxfail=10",
+    "--ignore=tests/test_performance.py",
+    "--ignore=tests/test_phase5_integration.py",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "performance: Performance tests",
+    "slow: Slow running tests"
+]

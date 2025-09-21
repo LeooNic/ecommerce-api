@@ -2,12 +2,13 @@
 Performance tests for the FastAPI e-commerce application.
 """
 
-import pytest
 import asyncio
-import time
-from httpx import AsyncClient
-from concurrent.futures import ThreadPoolExecutor
 import statistics
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+import pytest
+from httpx import AsyncClient
 
 
 class TestPerformance:
@@ -68,6 +69,7 @@ class TestPerformance:
     @pytest.mark.asyncio
     async def test_concurrent_requests(self, client: AsyncClient):
         """Test application performance under concurrent load."""
+
         async def make_request():
             start_time = time.time()
             response = await client.get("/")
@@ -88,8 +90,12 @@ class TestPerformance:
         avg_time = statistics.mean(response_times)
         max_time = max(response_times)
 
-        assert avg_time < 0.3, f"Average response time under load too high: {avg_time:.3f}s"
-        assert max_time < 0.5, f"Maximum response time under load too high: {max_time:.3f}s"
+        assert (
+            avg_time < 0.3
+        ), f"Average response time under load too high: {avg_time:.3f}s"
+        assert (
+            max_time < 0.5
+        ), f"Maximum response time under load too high: {max_time:.3f}s"
 
     @pytest.mark.asyncio
     async def test_rate_limiting_performance(self, client: AsyncClient):
@@ -105,7 +111,9 @@ class TestPerformance:
         avg_per_request = total_time / 10
 
         # Rate limiting shouldn't add significant overhead
-        assert avg_per_request < 0.1, f"Rate limiting overhead too high: {avg_per_request:.3f}s per request"
+        assert (
+            avg_per_request < 0.1
+        ), f"Rate limiting overhead too high: {avg_per_request:.3f}s per request"
 
     @pytest.mark.asyncio
     async def test_metrics_collection_performance(self, client: AsyncClient):
@@ -149,8 +157,9 @@ class TestMemoryPerformance:
     @pytest.mark.asyncio
     async def test_memory_usage_stability(self, client: AsyncClient):
         """Test that memory usage remains stable under load."""
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss
@@ -164,7 +173,9 @@ class TestMemoryPerformance:
         memory_increase = final_memory - initial_memory
 
         # Memory increase should be reasonable (less than 50MB)
-        assert memory_increase < 50 * 1024 * 1024, f"Memory usage increased too much: {memory_increase / 1024 / 1024:.2f}MB"
+        assert (
+            memory_increase < 50 * 1024 * 1024
+        ), f"Memory usage increased too much: {memory_increase / 1024 / 1024:.2f}MB"
 
     def test_metrics_memory_efficiency(self):
         """Test that metrics collection doesn't cause memory leaks."""
@@ -210,7 +221,9 @@ class TestDatabasePerformance:
         response = await client.get("/api/v1/health/detailed")
         data = response.json()
         db_response_time = data["database"]["response_time_ms"]
-        assert db_response_time < 100, f"Database response time too high: {db_response_time}ms"
+        assert (
+            db_response_time < 100
+        ), f"Database response time too high: {db_response_time}ms"
 
 
 class TestEmailPerformance:
@@ -227,8 +240,7 @@ class TestEmailPerformance:
         tasks = []
         for i in range(10):
             task = email_service.send_welcome_email(
-                user_email=f"test{i}@example.com",
-                user_name=f"Test User {i}"
+                user_email=f"test{i}@example.com", user_name=f"Test User {i}"
             )
             tasks.append(task)
 
@@ -242,7 +254,9 @@ class TestEmailPerformance:
         avg_per_email = total_time / 10
 
         # Email sending should be fast (since it's simulated)
-        assert avg_per_email < 0.01, f"Email sending too slow: {avg_per_email:.3f}s per email"
+        assert (
+            avg_per_email < 0.01
+        ), f"Email sending too slow: {avg_per_email:.3f}s per email"
         assert total_time < 0.1, f"Total email sending time too high: {total_time:.3f}s"
 
 
@@ -275,7 +289,9 @@ class TestStartupPerformance:
         end_time = time.time()
 
         total_time = end_time - start_time
-        assert total_time < 0.05, f"Monitoring initialization too slow: {total_time:.3f}s"
+        assert (
+            total_time < 0.05
+        ), f"Monitoring initialization too slow: {total_time:.3f}s"
 
 
 @pytest.mark.asyncio
@@ -304,4 +320,6 @@ async def test_overall_application_performance(client: AsyncClient):
     total_workflow_time = end_time - start_time
 
     # Complete workflow should be fast
-    assert total_workflow_time < 0.5, f"Complete workflow too slow: {total_workflow_time:.3f}s"
+    assert (
+        total_workflow_time < 0.5
+    ), f"Complete workflow too slow: {total_workflow_time:.3f}s"

@@ -3,23 +3,19 @@ Order management API endpoints.
 """
 
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.email_service import email_service
+from app.logging_config import get_logger
 from app.models.user import User
-from app.schemas.order import (
-    OrderResponse,
-    OrderSummary,
-    CheckoutRequest,
-    OrderUpdate
-)
+from app.rate_limiting import RateLimitConfig, limiter
+from app.schemas.order import CheckoutRequest, OrderResponse, OrderSummary, OrderUpdate
 from app.services.order_service import OrderService
 from app.services.payment_service import PaymentService
 from app.utils.auth import get_current_active_user, get_current_admin_user
-from app.email_service import email_service
-from app.logging_config import get_logger
-from app.rate_limiting import limiter, RateLimitConfig
 
 logger = get_logger(__name__)
 
@@ -32,7 +28,7 @@ async def checkout(
     request: Request,
     checkout_request: CheckoutRequest,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Create order from cart (checkout).
@@ -60,18 +56,20 @@ async def checkout(
                 {
                     "product_name": item.product.name,
                     "quantity": item.quantity,
-                    "price": item.price
+                    "price": item.price,
                 }
                 for item in order.items
-            ]
+            ],
         }
 
         await email_service.send_order_confirmation(
             user_email=current_user.email,
             user_name=f"{current_user.first_name} {current_user.last_name}",
-            order_data=order_data
+            order_data=order_data,
         )
-        logger.info(f"Order confirmation email sent to {current_user.email} for order {order.id}")
+        logger.info(
+            f"Order confirmation email sent to {current_user.email} for order {order.id}"
+        )
     except Exception as e:
         logger.error(f"Failed to send order confirmation email: {e}")
 
@@ -82,7 +80,7 @@ async def checkout(
 async def pay_order(
     order_id: int,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Process payment for order.
@@ -103,9 +101,11 @@ async def pay_order(
 @router.get("/", response_model=List[OrderSummary])
 async def get_user_orders(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return"),
+    limit: int = Query(
+        10, ge=1, le=100, description="Maximum number of records to return"
+    ),
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get current user's orders.
@@ -125,7 +125,7 @@ async def get_user_orders(
 async def get_order(
     order_id: int,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get specific order details.
@@ -147,7 +147,7 @@ async def get_order(
 async def cancel_order(
     order_id: int,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Cancel order.
@@ -169,9 +169,11 @@ async def cancel_order(
 @router.get("/admin/all", response_model=List[OrderSummary])
 async def get_all_orders(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return"),
+    limit: int = Query(
+        10, ge=1, le=100, description="Maximum number of records to return"
+    ),
     current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get all orders (admin only).
@@ -192,7 +194,7 @@ async def update_order_status(
     order_id: int,
     update_data: OrderUpdate,
     current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update order status (admin only).
@@ -215,7 +217,7 @@ async def update_order_status(
 async def get_order_admin(
     order_id: int,
     current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get order details (admin only).
@@ -230,12 +232,12 @@ async def get_order_admin(
         HTTPException: If order not found
     """
     from app.models.order import Order
+
     order_service = OrderService(db)
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Order not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
         )
     return order_service._order_to_response(order)
 
@@ -252,5 +254,5 @@ async def get_payment_methods():
     payment_service = PaymentService()
     return {
         "supported_methods": payment_service.get_supported_methods(),
-        "message": "Supported payment methods for checkout"
+        "message": "Supported payment methods for checkout",
     }

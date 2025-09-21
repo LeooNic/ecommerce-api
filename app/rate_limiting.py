@@ -3,24 +3,28 @@ Rate limiting implementation using Redis and slowapi.
 """
 
 import time
-from typing import Optional
-from fastapi import Request, HTTPException, status
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+from typing import Optional, Union
+
 import redis
+from fastapi import HTTPException, Request, status
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
 from app.config import settings
 from app.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 # Redis connection for rate limiting
+redis_client: Optional[redis.Redis] = None
+
 try:
     redis_client = redis.Redis(
-        host=getattr(settings, 'redis_host', 'localhost'),
-        port=getattr(settings, 'redis_port', 6379),
-        db=getattr(settings, 'redis_db', 0),
-        decode_responses=True
+        host=getattr(settings, "redis_host", "localhost"),
+        port=getattr(settings, "redis_port", 6379),
+        db=getattr(settings, "redis_db", 0),
+        decode_responses=True,
     )
     # Test connection
     redis_client.ping()
@@ -41,7 +45,7 @@ def get_rate_limit_key(request: Request) -> str:
         Rate limit key string
     """
     # Try to get user ID from request state (set by auth middleware)
-    user_id = getattr(request.state, 'user_id', None)
+    user_id = getattr(request.state, "user_id", None)
     if user_id:
         return f"user:{user_id}"
 
@@ -51,15 +55,9 @@ def get_rate_limit_key(request: Request) -> str:
 
 # Create limiter instance
 if redis_client:
-    limiter = Limiter(
-        key_func=get_rate_limit_key,
-        storage_uri="redis://localhost:6379"
-    )
+    limiter = Limiter(key_func=get_rate_limit_key, storage_uri="redis://localhost:6379")
 else:
-    limiter = Limiter(
-        key_func=get_rate_limit_key,
-        storage_uri="memory://"
-    )
+    limiter = Limiter(key_func=get_rate_limit_key, storage_uri="memory://")
 
 
 def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
@@ -73,20 +71,22 @@ def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
     Returns:
         HTTPException with appropriate message
     """
+    retry_after = getattr(exc, "retry_after", 60)  # Default to 60 seconds
+
     logger.warning(
         "rate_limit_exceeded",
         key=get_rate_limit_key(request),
         path=request.url.path,
-        retry_after=exc.retry_after
+        retry_after=retry_after,
     )
 
     raise HTTPException(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         detail={
             "error": "Rate limit exceeded",
-            "message": f"Too many requests. Try again in {exc.retry_after} seconds.",
-            "retry_after": exc.retry_after
-        }
+            "message": f"Too many requests. Try again in {retry_after} seconds.",
+            "retry_after": retry_after,
+        },
     )
 
 
@@ -143,13 +143,13 @@ def get_user_rate_limit_info(request: Request, limit_key: str) -> dict:
         current_count = results[1]
 
         # Parse limit (e.g., "100/minute" -> 100)
-        limit_value = int(limit_key.split('/')[0]) if '/' in limit_key else 100
+        limit_value = int(limit_key.split("/")[0]) if "/" in limit_key else 100
 
         return {
             "limit": limit_value,
             "remaining": max(0, limit_value - current_count),
             "reset_time": current_time + window_size,
-            "current_count": current_count
+            "current_count": current_count,
         }
     except Exception as e:
         logger.error(f"Error getting rate limit info: {e}")

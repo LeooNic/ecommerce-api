@@ -5,7 +5,7 @@ A modern, professional e-commerce REST API built with FastAPI, SQLAlchemy, and P
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/fastapi-0.104+-green.svg)](https://fastapi.tiangolo.com)
-[![Test Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](#testing)
+[![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](#testing)
 
 ## 🚀 Features
 
@@ -16,7 +16,7 @@ A modern, professional e-commerce REST API built with FastAPI, SQLAlchemy, and P
 - **Comprehensive CRUD Operations**: Products, Categories, Users, Orders, Cart
 - **Advanced Filtering & Pagination**: Search, sort, and filter across all resources
 
-### Phase 5 Advanced Features
+### Advanced Features
 - **Structured Logging**: JSON-formatted logs with request tracking
 - **Rate Limiting**: Configurable rate limits per endpoint and user type
 - **CORS Configuration**: Production-ready cross-origin resource sharing
@@ -27,10 +27,30 @@ A modern, professional e-commerce REST API built with FastAPI, SQLAlchemy, and P
 ### Production Ready
 - **Docker Support**: Multi-stage builds with optimization
 - **Database Migrations**: Alembic for schema management
-- **Test Suite**: 85%+ coverage with unit and integration tests
+- **Test Suite**: 80%+ coverage with comprehensive unit tests
 - **API Documentation**: Auto-generated OpenAPI/Swagger with examples
 - **CI/CD Pipeline**: GitHub Actions for testing and deployment
 - **Production Deployment**: Railway/Render ready with PostgreSQL
+
+## 📸 API Documentation Screenshots
+
+### Authentication Endpoints
+![Authentication API](screenshots/authentication.png)
+
+### Product Management
+![Products API](screenshots/products.png)
+
+### Category Management
+![Categories API](screenshots/categories.png)
+
+### Shopping Cart
+![Cart API](screenshots/cart.png)
+
+### Order Management
+![Orders API](screenshots/orders.png)
+
+### System Monitoring
+![Monitoring API](screenshots/monitoring.png)
 
 ## 📊 API Endpoints
 
@@ -189,7 +209,7 @@ pytest -m "not integration" -v
 ```
 
 ### Test Coverage
-Current test coverage: **85%+**
+Current test coverage: **80%+**
 
 Coverage report locations:
 - HTML: `htmlcov/index.html`
@@ -528,6 +548,6 @@ For questions, suggestions, or support:
 
 ---
 
-**Project Status**: Phase 6 Complete - Production Ready
-**Last Updated**: September 2024
+**Project Status**: Production Ready
+**Last Updated**: September 2025
 **Portfolio Project**: Professional FastAPI E-commerce API

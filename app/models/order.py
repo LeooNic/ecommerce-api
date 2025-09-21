@@ -6,20 +6,31 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, List
-from sqlalchemy import Column, Integer, String, DateTime, DECIMAL, ForeignKey, Text, Boolean
+
+from sqlalchemy import (
+    DECIMAL,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
 
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.user import User
     from app.models.product import Product
+    from app.models.user import User
 
 
 class OrderStatus(str, Enum):
     """
     Order status enumeration.
     """
+
     PENDING = "pending"
     PAID = "paid"
     SHIPPED = "shipped"
@@ -31,6 +42,7 @@ class PaymentStatus(str, Enum):
     """
     Payment status enumeration.
     """
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -69,7 +81,9 @@ class Order(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
     shipped_at = Column(DateTime, nullable=True)
     delivered_at = Column(DateTime, nullable=True)
 
@@ -78,7 +92,9 @@ class Order(Base):
 
     # Relationships
     user = relationship("User", back_populates="orders")
-    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    items = relationship(
+        "OrderItem", back_populates="order", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """
@@ -115,7 +131,10 @@ class Order(Base):
         Returns:
             bool: True if order can be shipped
         """
-        return self.status == OrderStatus.PAID and self.payment_status == PaymentStatus.COMPLETED
+        return (
+            self.status == OrderStatus.PAID
+            and self.payment_status == PaymentStatus.COMPLETED
+        )
 
     def can_be_delivered(self) -> bool:
         """

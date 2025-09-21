@@ -3,14 +3,20 @@ Categories router with CRUD endpoints.
 """
 
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse, CategoryList
+from app.schemas.category import (
+    CategoryCreate,
+    CategoryList,
+    CategoryResponse,
+    CategoryUpdate,
+)
 from app.services.category import CategoryService
-from app.utils.auth import get_current_admin_user, get_current_active_user
+from app.utils.auth import get_current_active_user, get_current_admin_user
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
@@ -19,7 +25,7 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 async def create_category(
     category_data: CategoryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Create a new category.
@@ -45,8 +51,10 @@ async def get_categories(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=100, description="Number of records to return"),
     active_only: bool = Query(True, description="Return only active categories"),
-    search: Optional[str] = Query(None, description="Search term for category name or description"),
-    db: Session = Depends(get_db)
+    search: Optional[str] = Query(
+        None, description="Search term for category name or description"
+    ),
+    db: Session = Depends(get_db),
 ):
     """
     Get paginated list of categories.
@@ -64,18 +72,12 @@ async def get_categories(
         CategoryList: Paginated list of categories
     """
     return CategoryService.get_categories(
-        db=db,
-        skip=skip,
-        limit=limit,
-        active_only=active_only,
-        search=search
+        db=db, skip=skip, limit=limit, active_only=active_only, search=search
     )
 
 
 @router.get("/active", response_model=list[CategoryResponse])
-async def get_active_categories(
-    db: Session = Depends(get_db)
-):
+async def get_active_categories(db: Session = Depends(get_db)):
     """
     Get all active categories.
 
@@ -92,10 +94,7 @@ async def get_active_categories(
 
 
 @router.get("/{category_id}", response_model=CategoryResponse)
-async def get_category(
-    category_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_category(category_id: int, db: Session = Depends(get_db)):
     """
     Get a category by ID.
 
@@ -114,17 +113,13 @@ async def get_category(
     category = CategoryService.get_category(db, category_id)
     if not category:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Category not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
         )
     return category
 
 
 @router.get("/slug/{slug}", response_model=CategoryResponse)
-async def get_category_by_slug(
-    slug: str,
-    db: Session = Depends(get_db)
-):
+async def get_category_by_slug(slug: str, db: Session = Depends(get_db)):
     """
     Get a category by slug.
 
@@ -143,8 +138,7 @@ async def get_category_by_slug(
     category = CategoryService.get_category_by_slug(db, slug)
     if not category:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Category not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
         )
     return category
 
@@ -154,7 +148,7 @@ async def update_category(
     category_id: int,
     category_data: CategoryUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Update a category.
@@ -180,7 +174,7 @@ async def update_category(
 async def delete_category(
     category_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Delete a category.

@@ -3,26 +3,22 @@ Test configuration and fixtures.
 """
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
 
-from app.main import app
 from app.database import Base, get_db
-from app.models.user import User
-from app.models.product import Product
+from app.main import app
 from app.models.category import Category
+from app.models.product import Product
+from app.models.user import User
 from app.utils.auth import get_password_hash
-
 
 # Test database URL
 TEST_DATABASE_URL = "sqlite:///./test_ecommerce.db"
 
 # Create test engine
-engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 
 # Create test session maker
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -52,6 +48,7 @@ def client(db_session):
     """
     Create a test client with overridden database dependency.
     """
+
     def override_get_db():
         try:
             yield db_session
@@ -77,7 +74,7 @@ def test_user_data():
         "first_name": "Test",
         "last_name": "User",
         "password": "testpassword123",
-        "role": "customer"
+        "role": "customer",
     }
 
 
@@ -92,7 +89,7 @@ def test_admin_data():
         "first_name": "Admin",
         "last_name": "User",
         "password": "adminpassword123",
-        "role": "admin"
+        "role": "admin",
     }
 
 
@@ -109,7 +106,7 @@ def created_user(db_session, test_user_data):
         hashed_password=get_password_hash(test_user_data["password"]),
         role=test_user_data["role"],
         is_active=True,
-        is_verified=False
+        is_verified=False,
     )
 
     db_session.add(user)
@@ -132,7 +129,7 @@ def created_admin(db_session, test_admin_data):
         hashed_password=get_password_hash(test_admin_data["password"]),
         role=test_admin_data["role"],
         is_active=True,
-        is_verified=True
+        is_verified=True,
     )
 
     db_session.add(admin)
@@ -149,7 +146,7 @@ def auth_headers(client, created_user, test_user_data):
     """
     login_data = {
         "email": test_user_data["email"],
-        "password": test_user_data["password"]
+        "password": test_user_data["password"],
     }
 
     response = client.post("/api/v1/auth/login", json=login_data)
@@ -165,7 +162,7 @@ def admin_auth_headers(client, created_admin, test_admin_data):
     """
     login_data = {
         "email": test_admin_data["email"],
-        "password": test_admin_data["password"]
+        "password": test_admin_data["password"],
     }
 
     response = client.post("/api/v1/auth/login", json=login_data)
@@ -185,7 +182,7 @@ def test_category(db_session):
         name="Test Category",
         description="A test category for testing",
         slug="test-category",
-        is_active=True
+        is_active=True,
     )
 
     db_session.add(category)
@@ -219,7 +216,7 @@ def test_product(db_session, test_category):
         is_featured=False,
         requires_shipping=True,
         meta_title="Test Product - Buy Now",
-        meta_description="Test product for testing purposes"
+        meta_description="Test product for testing purposes",
     )
 
     db_session.add(product)
@@ -236,7 +233,7 @@ def test_user_token(client, created_user, test_user_data):
     """
     login_data = {
         "email": test_user_data["email"],
-        "password": test_user_data["password"]
+        "password": test_user_data["password"],
     }
 
     response = client.post("/api/v1/auth/login", json=login_data)
@@ -250,7 +247,7 @@ def test_admin_token(client, created_admin, test_admin_data):
     """
     login_data = {
         "email": test_admin_data["email"],
-        "password": test_admin_data["password"]
+        "password": test_admin_data["password"],
     }
 
     response = client.post("/api/v1/auth/login", json=login_data)

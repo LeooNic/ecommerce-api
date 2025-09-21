@@ -3,7 +3,8 @@ Application configuration module.
 """
 
 import os
-from typing import Optional, List
+from typing import List, Optional
+
 from pydantic_settings import BaseSettings
 
 
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     app_name: str = "E-commerce API"
     version: str = "1.0.0"
     debug: bool = False
+    environment: str = "development"
 
     # Database settings
     database_url: str = "sqlite:///./ecommerce.db"

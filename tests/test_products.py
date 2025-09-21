@@ -2,19 +2,25 @@
 Comprehensive tests for Products functionality.
 """
 
-import pytest
 from decimal import Decimal
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.main import app
-from app.models.product import Product
 from app.models.category import Category
+from app.models.product import Product
 from app.models.user import User
-from app.schemas.product import ProductCreate, ProductUpdate, ProductFilters, StockUpdate
 from app.schemas.category import CategoryCreate
-from app.services.product import ProductService
+from app.schemas.product import (
+    ProductCreate,
+    ProductFilters,
+    ProductUpdate,
+    StockUpdate,
+)
 from app.services.category import CategoryService
+from app.services.product import ProductService
 
 
 class TestProductService:
@@ -31,7 +37,7 @@ class TestProductService:
             sku="TEST-001",
             price=Decimal("99.99"),
             stock_quantity=50,
-            is_active=True
+            is_active=True,
         )
 
         product = ProductService.create_product(db_session, product_data)
@@ -49,9 +55,7 @@ class TestProductService:
         """Test creating product with category."""
         # Create category first
         category_data = CategoryCreate(
-            name="Electronics",
-            slug="electronics",
-            is_active=True
+            name="Electronics", slug="electronics", is_active=True
         )
         category = CategoryService.create_category(db_session, category_data)
 
@@ -63,7 +67,7 @@ class TestProductService:
             price=Decimal("599.99"),
             stock_quantity=25,
             category_id=category.id,
-            is_active=True
+            is_active=True,
         )
 
         product = ProductService.create_product(db_session, product_data)
@@ -79,7 +83,7 @@ class TestProductService:
             sku="TEST-001",
             price=Decimal("99.99"),
             category_id=999,  # Non-existent category
-            is_active=True
+            is_active=True,
         )
 
         with pytest.raises(Exception):
@@ -92,7 +96,7 @@ class TestProductService:
             slug="product-1",
             sku="DUPLICATE-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
 
         # Create first product
@@ -104,7 +108,7 @@ class TestProductService:
             slug="product-2",
             sku="DUPLICATE-001",  # Same SKU
             price=Decimal("199.99"),
-            is_active=True
+            is_active=True,
         )
 
         with pytest.raises(Exception):
@@ -117,7 +121,7 @@ class TestProductService:
             slug="duplicate-slug",
             sku="SKU-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
 
         # Create first product
@@ -129,7 +133,7 @@ class TestProductService:
             slug="duplicate-slug",  # Same slug
             sku="SKU-002",
             price=Decimal("199.99"),
-            is_active=True
+            is_active=True,
         )
 
         with pytest.raises(Exception):
@@ -142,7 +146,7 @@ class TestProductService:
             slug="get-test-product",
             sku="GET-001",
             price=Decimal("149.99"),
-            is_active=True
+            is_active=True,
         )
 
         created_product = ProductService.create_product(db_session, product_data)
@@ -159,11 +163,13 @@ class TestProductService:
             slug="slug-test-product",
             sku="SLUG-001",
             price=Decimal("199.99"),
-            is_active=True
+            is_active=True,
         )
 
         created_product = ProductService.create_product(db_session, product_data)
-        retrieved_product = ProductService.get_product_by_slug(db_session, "slug-test-product")
+        retrieved_product = ProductService.get_product_by_slug(
+            db_session, "slug-test-product"
+        )
 
         assert retrieved_product is not None
         assert retrieved_product.id == created_product.id
@@ -176,11 +182,13 @@ class TestProductService:
             slug="sku-test-product",
             sku="SKU-TEST-001",
             price=Decimal("299.99"),
-            is_active=True
+            is_active=True,
         )
 
         created_product = ProductService.create_product(db_session, product_data)
-        retrieved_product = ProductService.get_product_by_sku(db_session, "SKU-TEST-001")
+        retrieved_product = ProductService.get_product_by_sku(
+            db_session, "SKU-TEST-001"
+        )
 
         assert retrieved_product is not None
         assert retrieved_product.id == created_product.id
@@ -195,7 +203,7 @@ class TestProductService:
                 slug=f"product-{i}",
                 sku=f"SKU-{i:03d}",
                 price=Decimal(f"{100 + i}.99"),
-                is_active=True
+                is_active=True,
             )
             ProductService.create_product(db_session, product_data)
 
@@ -217,24 +225,39 @@ class TestProductService:
     def test_get_products_with_filters(self, db_session: Session):
         """Test getting products with various filters."""
         # Create category
-        category_data = CategoryCreate(name="Test Category", slug="test-category", is_active=True)
+        category_data = CategoryCreate(
+            name="Test Category", slug="test-category", is_active=True
+        )
         category = CategoryService.create_category(db_session, category_data)
 
         # Create products with different attributes
         products = [
             ProductCreate(
-                name="Expensive Product", slug="expensive", sku="EXP-001",
-                price=Decimal("999.99"), stock_quantity=10, is_featured=True,
-                category_id=category.id, is_active=True
+                name="Expensive Product",
+                slug="expensive",
+                sku="EXP-001",
+                price=Decimal("999.99"),
+                stock_quantity=10,
+                is_featured=True,
+                category_id=category.id,
+                is_active=True,
             ),
             ProductCreate(
-                name="Cheap Product", slug="cheap", sku="CHEAP-001",
-                price=Decimal("19.99"), stock_quantity=0, is_featured=False,
-                is_active=True
+                name="Cheap Product",
+                slug="cheap",
+                sku="CHEAP-001",
+                price=Decimal("19.99"),
+                stock_quantity=0,
+                is_featured=False,
+                is_active=True,
             ),
             ProductCreate(
-                name="Inactive Product", slug="inactive", sku="INACTIVE-001",
-                price=Decimal("49.99"), stock_quantity=5, is_active=False
+                name="Inactive Product",
+                slug="inactive",
+                sku="INACTIVE-001",
+                price=Decimal("49.99"),
+                stock_quantity=5,
+                is_active=False,
             ),
         ]
 
@@ -242,7 +265,9 @@ class TestProductService:
             ProductService.create_product(db_session, product_data)
 
         # Test price range filter
-        filters = ProductFilters(min_price=Decimal("50.00"), max_price=Decimal("1000.00"))
+        filters = ProductFilters(
+            min_price=Decimal("50.00"), max_price=Decimal("1000.00")
+        )
         result = ProductService.get_products(db_session, filters=filters)
         assert len(result.items) == 1
         assert result.items[0].name == "Expensive Product"
@@ -256,7 +281,9 @@ class TestProductService:
         # Test stock filter - only active products with stock > 0
         filters = ProductFilters(in_stock=True)
         result = ProductService.get_products(db_session, filters=filters)
-        assert len(result.items) == 1  # Only "Expensive Product" (stock=10, active=True)
+        assert (
+            len(result.items) == 1
+        )  # Only "Expensive Product" (stock=10, active=True)
         assert all(item.stock_quantity > 0 for item in result.items)
 
         # Test featured filter
@@ -279,7 +306,7 @@ class TestProductService:
             sku="ORIG-001",
             price=Decimal("99.99"),
             stock_quantity=20,
-            is_active=True
+            is_active=True,
         )
 
         created_product = ProductService.create_product(db_session, product_data)
@@ -289,7 +316,7 @@ class TestProductService:
             name="Updated Product",
             price=Decimal("149.99"),
             stock_quantity=30,
-            is_featured=True
+            is_featured=True,
         )
 
         updated_product = ProductService.update_product(
@@ -311,16 +338,13 @@ class TestProductService:
             price=Decimal("99.99"),
             stock_quantity=20,
             low_stock_threshold=10,
-            is_active=True
+            is_active=True,
         )
 
         created_product = ProductService.create_product(db_session, product_data)
 
         # Update stock
-        stock_data = StockUpdate(
-            stock_quantity=50,
-            low_stock_threshold=15
-        )
+        stock_data = StockUpdate(stock_quantity=50, low_stock_threshold=15)
 
         updated_product = ProductService.update_stock(
             db_session, created_product.id, stock_data
@@ -336,7 +360,7 @@ class TestProductService:
             slug="to-delete",
             sku="DELETE-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
 
         created_product = ProductService.create_product(db_session, product_data)
@@ -354,9 +378,30 @@ class TestProductService:
         """Test getting featured products."""
         # Create mix of featured and non-featured products
         products = [
-            ProductCreate(name="Featured 1", slug="featured-1", sku="FEAT-001", price=Decimal("99.99"), is_featured=True, is_active=True),
-            ProductCreate(name="Featured 2", slug="featured-2", sku="FEAT-002", price=Decimal("149.99"), is_featured=True, is_active=True),
-            ProductCreate(name="Regular", slug="regular", sku="REG-001", price=Decimal("79.99"), is_featured=False, is_active=True),
+            ProductCreate(
+                name="Featured 1",
+                slug="featured-1",
+                sku="FEAT-001",
+                price=Decimal("99.99"),
+                is_featured=True,
+                is_active=True,
+            ),
+            ProductCreate(
+                name="Featured 2",
+                slug="featured-2",
+                sku="FEAT-002",
+                price=Decimal("149.99"),
+                is_featured=True,
+                is_active=True,
+            ),
+            ProductCreate(
+                name="Regular",
+                slug="regular",
+                sku="REG-001",
+                price=Decimal("79.99"),
+                is_featured=False,
+                is_active=True,
+            ),
         ]
 
         for product_data in products:
@@ -371,9 +416,33 @@ class TestProductService:
         """Test getting low stock products."""
         # Create products with different stock levels
         products = [
-            ProductCreate(name="Low Stock 1", slug="low-1", sku="LOW-001", price=Decimal("99.99"), stock_quantity=5, low_stock_threshold=10, is_active=True),
-            ProductCreate(name="Low Stock 2", slug="low-2", sku="LOW-002", price=Decimal("149.99"), stock_quantity=3, low_stock_threshold=10, is_active=True),
-            ProductCreate(name="Good Stock", slug="good", sku="GOOD-001", price=Decimal("79.99"), stock_quantity=50, low_stock_threshold=10, is_active=True),
+            ProductCreate(
+                name="Low Stock 1",
+                slug="low-1",
+                sku="LOW-001",
+                price=Decimal("99.99"),
+                stock_quantity=5,
+                low_stock_threshold=10,
+                is_active=True,
+            ),
+            ProductCreate(
+                name="Low Stock 2",
+                slug="low-2",
+                sku="LOW-002",
+                price=Decimal("149.99"),
+                stock_quantity=3,
+                low_stock_threshold=10,
+                is_active=True,
+            ),
+            ProductCreate(
+                name="Good Stock",
+                slug="good",
+                sku="GOOD-001",
+                price=Decimal("79.99"),
+                stock_quantity=50,
+                low_stock_threshold=10,
+                is_active=True,
+            ),
         ]
 
         for product_data in products:
@@ -382,15 +451,39 @@ class TestProductService:
         low_stock_products = ProductService.get_low_stock_products(db_session, limit=10)
 
         assert len(low_stock_products) == 2
-        assert all(product.stock_quantity <= product.low_stock_threshold for product in low_stock_products)
+        assert all(
+            product.stock_quantity <= product.low_stock_threshold
+            for product in low_stock_products
+        )
 
     def test_search_products(self, db_session: Session):
         """Test searching products."""
         # Create products for search testing
         products = [
-            ProductCreate(name="Apple iPhone", slug="iphone", sku="APPLE-001", price=Decimal("999.99"), description="Latest Apple smartphone", is_active=True),
-            ProductCreate(name="Samsung Galaxy", slug="galaxy", sku="SAMSUNG-001", price=Decimal("899.99"), description="Android smartphone", is_active=True),
-            ProductCreate(name="Apple MacBook", slug="macbook", sku="APPLE-002", price=Decimal("1299.99"), description="Apple laptop", is_active=True),
+            ProductCreate(
+                name="Apple iPhone",
+                slug="iphone",
+                sku="APPLE-001",
+                price=Decimal("999.99"),
+                description="Latest Apple smartphone",
+                is_active=True,
+            ),
+            ProductCreate(
+                name="Samsung Galaxy",
+                slug="galaxy",
+                sku="SAMSUNG-001",
+                price=Decimal("899.99"),
+                description="Android smartphone",
+                is_active=True,
+            ),
+            ProductCreate(
+                name="Apple MacBook",
+                slug="macbook",
+                sku="APPLE-002",
+                price=Decimal("1299.99"),
+                description="Apple laptop",
+                is_active=True,
+            ),
         ]
 
         for product_data in products:
@@ -420,7 +513,7 @@ class TestProductService:
             price=Decimal("99.99"),
             compare_price=Decimal("149.99"),
             stock_quantity=10,
-            is_active=True
+            is_active=True,
         )
 
         product = ProductService.create_product(db_session, product_data)
@@ -453,13 +546,11 @@ class TestProductEndpoints:
             "sku": "TEST-001",
             "price": "99.99",
             "stock_quantity": 50,
-            "is_active": True
+            "is_active": True,
         }
 
         response = client.post(
-            "/api/v1/products/",
-            json=product_data,
-            headers=admin_auth_headers
+            "/api/v1/products/", json=product_data, headers=admin_auth_headers
         )
 
         assert response.status_code == 201
@@ -475,13 +566,11 @@ class TestProductEndpoints:
             "slug": "test-product",
             "sku": "TEST-001",
             "price": "99.99",
-            "is_active": True
+            "is_active": True,
         }
 
         response = client.post(
-            "/api/v1/products/",
-            json=product_data,
-            headers=auth_headers
+            "/api/v1/products/", json=product_data, headers=auth_headers
         )
 
         assert response.status_code == 403
@@ -494,7 +583,7 @@ class TestProductEndpoints:
             slug="public-product",
             sku="PUBLIC-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
         ProductService.create_product(db_session, product_data)
 
@@ -509,7 +598,9 @@ class TestProductEndpoints:
     def test_get_products_with_filters(self, client: TestClient, db_session: Session):
         """Test getting products with filter parameters."""
         # Create category and product
-        category_data = CategoryCreate(name="Filter Category", slug="filter-category", is_active=True)
+        category_data = CategoryCreate(
+            name="Filter Category", slug="filter-category", is_active=True
+        )
         category = CategoryService.create_category(db_session, category_data)
 
         product_data = ProductCreate(
@@ -519,7 +610,7 @@ class TestProductEndpoints:
             price=Decimal("199.99"),
             category_id=category.id,
             is_featured=True,
-            is_active=True
+            is_active=True,
         )
         ProductService.create_product(db_session, product_data)
 
@@ -544,23 +635,21 @@ class TestProductEndpoints:
         data = response.json()
         assert isinstance(data, list)
 
-    def test_get_low_stock_products_admin(self, client: TestClient, admin_auth_headers: dict):
+    def test_get_low_stock_products_admin(
+        self, client: TestClient, admin_auth_headers: dict
+    ):
         """Test getting low stock products as admin."""
-        response = client.get(
-            "/api/v1/products/low-stock",
-            headers=admin_auth_headers
-        )
+        response = client.get("/api/v1/products/low-stock", headers=admin_auth_headers)
 
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
 
-    def test_get_low_stock_products_non_admin(self, client: TestClient, auth_headers: dict):
+    def test_get_low_stock_products_non_admin(
+        self, client: TestClient, auth_headers: dict
+    ):
         """Test getting low stock products as non-admin."""
-        response = client.get(
-            "/api/v1/products/low-stock",
-            headers=auth_headers
-        )
+        response = client.get("/api/v1/products/low-stock", headers=auth_headers)
 
         assert response.status_code == 403
 
@@ -572,7 +661,7 @@ class TestProductEndpoints:
             slug="searchable-product",
             sku="SEARCH-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
         ProductService.create_product(db_session, product_data)
 
@@ -589,7 +678,7 @@ class TestProductEndpoints:
             slug="get-by-id",
             sku="GET-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
         created_product = ProductService.create_product(db_session, product_data)
 
@@ -607,7 +696,7 @@ class TestProductEndpoints:
             slug="get-by-slug",
             sku="SLUG-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
         ProductService.create_product(db_session, product_data)
 
@@ -617,46 +706,46 @@ class TestProductEndpoints:
         data = response.json()
         assert data["slug"] == "get-by-slug"
 
-    def test_get_product_by_sku_admin(self, client: TestClient, admin_auth_headers: dict, db_session: Session):
+    def test_get_product_by_sku_admin(
+        self, client: TestClient, admin_auth_headers: dict, db_session: Session
+    ):
         """Test getting product by SKU as admin."""
         product_data = ProductCreate(
             name="SKU Product",
             slug="sku-product",
             sku="SKU-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
         ProductService.create_product(db_session, product_data)
 
         response = client.get(
-            "/api/v1/products/sku/SKU-001",
-            headers=admin_auth_headers
+            "/api/v1/products/sku/SKU-001", headers=admin_auth_headers
         )
 
         assert response.status_code == 200
         data = response.json()
         assert data["sku"] == "SKU-001"
 
-    def test_update_product_admin(self, client: TestClient, admin_auth_headers: dict, db_session: Session):
+    def test_update_product_admin(
+        self, client: TestClient, admin_auth_headers: dict, db_session: Session
+    ):
         """Test updating product as admin."""
         product_data = ProductCreate(
             name="Update Product",
             slug="update-product",
             sku="UPDATE-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
         created_product = ProductService.create_product(db_session, product_data)
 
-        update_data = {
-            "name": "Updated Product Name",
-            "price": "149.99"
-        }
+        update_data = {"name": "Updated Product Name", "price": "149.99"}
 
         response = client.put(
             f"/api/v1/products/{created_product.id}",
             json=update_data,
-            headers=admin_auth_headers
+            headers=admin_auth_headers,
         )
 
         assert response.status_code == 200
@@ -664,7 +753,9 @@ class TestProductEndpoints:
         assert data["name"] == "Updated Product Name"
         assert float(data["price"]) == 149.99
 
-    def test_update_product_stock_admin(self, client: TestClient, admin_auth_headers: dict, db_session: Session):
+    def test_update_product_stock_admin(
+        self, client: TestClient, admin_auth_headers: dict, db_session: Session
+    ):
         """Test updating product stock as admin."""
         product_data = ProductCreate(
             name="Stock Product",
@@ -672,19 +763,16 @@ class TestProductEndpoints:
             sku="STOCK-001",
             price=Decimal("99.99"),
             stock_quantity=20,
-            is_active=True
+            is_active=True,
         )
         created_product = ProductService.create_product(db_session, product_data)
 
-        stock_data = {
-            "stock_quantity": 100,
-            "low_stock_threshold": 15
-        }
+        stock_data = {"stock_quantity": 100, "low_stock_threshold": 15}
 
         response = client.patch(
             f"/api/v1/products/{created_product.id}/stock",
             json=stock_data,
-            headers=admin_auth_headers
+            headers=admin_auth_headers,
         )
 
         assert response.status_code == 200
@@ -692,20 +780,21 @@ class TestProductEndpoints:
         assert data["stock_quantity"] == 100
         assert data["low_stock_threshold"] == 15
 
-    def test_delete_product_admin(self, client: TestClient, admin_auth_headers: dict, db_session: Session):
+    def test_delete_product_admin(
+        self, client: TestClient, admin_auth_headers: dict, db_session: Session
+    ):
         """Test deleting product as admin."""
         product_data = ProductCreate(
             name="Delete Product",
             slug="delete-product",
             sku="DELETE-001",
             price=Decimal("99.99"),
-            is_active=True
+            is_active=True,
         )
         created_product = ProductService.create_product(db_session, product_data)
 
         response = client.delete(
-            f"/api/v1/products/{created_product.id}",
-            headers=admin_auth_headers
+            f"/api/v1/products/{created_product.id}", headers=admin_auth_headers
         )
 
         assert response.status_code == 204
@@ -715,7 +804,9 @@ class TestProductEndpoints:
         response = client.get("/api/v1/products/999")
         assert response.status_code == 404
 
-    def test_product_validation_errors(self, client: TestClient, admin_auth_headers: dict):
+    def test_product_validation_errors(
+        self, client: TestClient, admin_auth_headers: dict
+    ):
         """Test product validation errors."""
         # Test invalid price
         invalid_data = {
@@ -723,13 +814,11 @@ class TestProductEndpoints:
             "slug": "invalid-product",
             "sku": "INVALID-001",
             "price": "-10.00",  # Negative price
-            "is_active": True
+            "is_active": True,
         }
 
         response = client.post(
-            "/api/v1/products/",
-            json=invalid_data,
-            headers=admin_auth_headers
+            "/api/v1/products/", json=invalid_data, headers=admin_auth_headers
         )
 
         assert response.status_code == 422  # Validation error

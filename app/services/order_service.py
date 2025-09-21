@@ -6,20 +6,21 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 
-from app.models.order import Order, OrderItem, OrderStatus, PaymentStatus
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
 from app.models.cart import Cart, CartItem
+from app.models.order import Order, OrderItem, OrderStatus, PaymentStatus
 from app.models.product import Product
 from app.models.user import User
 from app.schemas.order import (
-    OrderResponse,
-    OrderItemResponse,
-    OrderSummary,
     CheckoutRequest,
+    OrderItemResponse,
+    OrderResponse,
+    OrderSummary,
     OrderUpdate,
-    PaymentRequest
+    PaymentRequest,
 )
 from app.services.payment_service import PaymentService
 
@@ -39,7 +40,9 @@ class OrderService:
         self.db = db
         self.payment_service = PaymentService()
 
-    def create_order_from_cart(self, user_id: int, checkout_request: CheckoutRequest) -> OrderResponse:
+    def create_order_from_cart(
+        self, user_id: int, checkout_request: CheckoutRequest
+    ) -> OrderResponse:
         """
         Create order from user's cart.
 
@@ -57,8 +60,7 @@ class OrderService:
         cart = self.db.query(Cart).filter(Cart.user_id == user_id).first()
         if not cart or cart.is_empty:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cart is empty"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Cart is empty"
             )
 
         # Validate all cart items have sufficient stock
@@ -67,18 +69,20 @@ class OrderService:
             if not product.is_active:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Product {product.name} is no longer available"
+                    detail=f"Product {product.name} is no longer available",
                 )
             if not product.can_order(cart_item.quantity):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Insufficient stock for {product.name}. Available: {product.stock_quantity}"
+                    detail=f"Insufficient stock for {product.name}. Available: {product.stock_quantity}",
                 )
 
         # Calculate totals
         subtotal = cart.total_amount
-        tax_amount = subtotal * Decimal('0.10')  # 10% tax
-        shipping_amount = Decimal('10.00') if subtotal < Decimal('100.00') else Decimal('0.00')
+        tax_amount = subtotal * Decimal("0.10")  # 10% tax
+        shipping_amount = (
+            Decimal("10.00") if subtotal < Decimal("100.00") else Decimal("0.00")
+        )
         total_amount = subtotal + tax_amount + shipping_amount
 
         # Generate order number
@@ -98,7 +102,7 @@ class OrderService:
             billing_address=checkout_request.billing_address,
             phone=checkout_request.phone,
             notes=checkout_request.notes,
-            payment_method=checkout_request.payment_method
+            payment_method=checkout_request.payment_method,
         )
 
         self.db.add(order)
@@ -113,7 +117,7 @@ class OrderService:
                 unit_price=cart_item.unit_price,
                 total_price=cart_item.subtotal,
                 product_name=cart_item.product.name,
-                product_sku=cart_item.product.sku
+                product_sku=cart_item.product.sku,
             )
             self.db.add(order_item)
 
@@ -147,20 +151,18 @@ class OrderService:
 
         if order.status != OrderStatus.PENDING:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Order cannot be paid"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Order cannot be paid"
             )
 
         if order.payment_status != PaymentStatus.PENDING:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Payment has already been processed"
+                detail="Payment has already been processed",
             )
 
         # Process payment
         payment_request = PaymentRequest(
-            payment_method=order.payment_method,
-            amount=order.total_amount
+            payment_method=order.payment_method, amount=order.total_amount
         )
 
         order.payment_status = PaymentStatus.PROCESSING
@@ -178,7 +180,9 @@ class OrderService:
             order.status = OrderStatus.PENDING
             # Restore stock if payment failed
             for item in order.items:
-                product = self.db.query(Product).filter(Product.id == item.product_id).first()
+                product = (
+                    self.db.query(Product).filter(Product.id == item.product_id).first()
+                )
                 if product:
                     product.stock_quantity += item.quantity
 
@@ -188,12 +192,14 @@ class OrderService:
         if payment_response.status == PaymentStatus.FAILED:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Payment failed: {payment_response.message}"
+                detail=f"Payment failed: {payment_response.message}",
             )
 
         return self._order_to_response(order)
 
-    def get_user_orders(self, user_id: int, skip: int = 0, limit: int = 10) -> List[OrderSummary]:
+    def get_user_orders(
+        self, user_id: int, skip: int = 0, limit: int = 10
+    ) -> List[OrderSummary]:
         """
         Get user's orders.
 
@@ -205,9 +211,14 @@ class OrderService:
         Returns:
             List[OrderSummary]: List of user's orders
         """
-        orders = self.db.query(Order).filter(
-            Order.user_id == user_id
-        ).order_by(Order.created_at.desc()).offset(skip).limit(limit).all()
+        orders = (
+            self.db.query(Order)
+            .filter(Order.user_id == user_id)
+            .order_by(Order.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
         return [self._order_to_summary(order) for order in orders]
 
@@ -228,7 +239,9 @@ class OrderService:
         order = self._get_user_order(user_id, order_id)
         return self._order_to_response(order)
 
-    def update_order_status(self, order_id: int, update_data: OrderUpdate) -> OrderResponse:
+    def update_order_status(
+        self, order_id: int, update_data: OrderUpdate
+    ) -> OrderResponse:
         """
         Update order status (admin only).
 
@@ -245,8 +258,7 @@ class OrderService:
         order = self.db.query(Order).filter(Order.id == order_id).first()
         if not order:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Order not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
             )
 
         # Validate status transitions
@@ -254,7 +266,7 @@ class OrderService:
             if not self._validate_status_transition(order.status, update_data.status):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid status transition from {order.status} to {update_data.status}"
+                    detail=f"Invalid status transition from {order.status} to {update_data.status}",
                 )
             order.status = update_data.status
 
@@ -301,12 +313,14 @@ class OrderService:
         if not order.can_be_cancelled():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Order cannot be cancelled"
+                detail="Order cannot be cancelled",
             )
 
         # Restore stock
         for item in order.items:
-            product = self.db.query(Product).filter(Product.id == item.product_id).first()
+            product = (
+                self.db.query(Product).filter(Product.id == item.product_id).first()
+            )
             if product:
                 product.stock_quantity += item.quantity
 
@@ -327,9 +341,13 @@ class OrderService:
         Returns:
             List[OrderSummary]: List of all orders
         """
-        orders = self.db.query(Order).order_by(
-            Order.created_at.desc()
-        ).offset(skip).limit(limit).all()
+        orders = (
+            self.db.query(Order)
+            .order_by(Order.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
         return [self._order_to_summary(order) for order in orders]
 
@@ -347,15 +365,15 @@ class OrderService:
         Raises:
             HTTPException: If order not found
         """
-        order = self.db.query(Order).filter(
-            Order.id == order_id,
-            Order.user_id == user_id
-        ).first()
+        order = (
+            self.db.query(Order)
+            .filter(Order.id == order_id, Order.user_id == user_id)
+            .first()
+        )
 
         if not order:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Order not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
             )
 
         return order
@@ -371,7 +389,9 @@ class OrderService:
         unique_id = uuid.uuid4().hex[:8].upper()
         return f"ORD-{timestamp}-{unique_id}"
 
-    def _validate_status_transition(self, current_status: OrderStatus, new_status: OrderStatus) -> bool:
+    def _validate_status_transition(
+        self, current_status: OrderStatus, new_status: OrderStatus
+    ) -> bool:
         """
         Validate order status transition.
 
@@ -387,7 +407,7 @@ class OrderService:
             OrderStatus.PAID: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
             OrderStatus.SHIPPED: [OrderStatus.DELIVERED],
             OrderStatus.DELIVERED: [],
-            OrderStatus.CANCELLED: []
+            OrderStatus.CANCELLED: [],
         }
 
         return new_status in valid_transitions.get(current_status, [])
@@ -404,17 +424,19 @@ class OrderService:
         """
         items = []
         for item in order.items:
-            items.append(OrderItemResponse(
-                id=item.id,
-                product_id=item.product_id,
-                quantity=item.quantity,
-                unit_price=item.unit_price,
-                total_price=item.total_price,
-                line_total=item.line_total,
-                product_name=item.product_name,
-                product_sku=item.product_sku,
-                created_at=item.created_at
-            ))
+            items.append(
+                OrderItemResponse(
+                    id=item.id,
+                    product_id=item.product_id,
+                    quantity=item.quantity,
+                    unit_price=item.unit_price,
+                    total_price=item.total_price,
+                    line_total=item.line_total,
+                    product_name=item.product_name,
+                    product_sku=item.product_sku,
+                    created_at=item.created_at,
+                )
+            )
 
         return OrderResponse(
             id=order.id,
@@ -437,7 +459,7 @@ class OrderService:
             created_at=order.created_at,
             updated_at=order.updated_at,
             shipped_at=order.shipped_at,
-            delivered_at=order.delivered_at
+            delivered_at=order.delivered_at,
         )
 
     def _order_to_summary(self, order: Order) -> OrderSummary:
@@ -457,5 +479,5 @@ class OrderService:
             payment_status=order.payment_status,
             total_amount=order.total_amount,
             items_count=order.items_count,
-            created_at=order.created_at
+            created_at=order.created_at,
         )

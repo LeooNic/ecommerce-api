@@ -2,19 +2,25 @@
 Products router with CRUD endpoints and advanced features.
 """
 
-from typing import Optional
 from decimal import Decimal
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
 from app.schemas.product import (
-    ProductCreate, ProductUpdate, ProductResponse, ProductList,
-    ProductFilters, StockUpdate, ProductListItem
+    ProductCreate,
+    ProductFilters,
+    ProductList,
+    ProductListItem,
+    ProductResponse,
+    ProductUpdate,
+    StockUpdate,
 )
 from app.services.product import ProductService
-from app.utils.auth import get_current_admin_user, get_current_active_user
+from app.utils.auth import get_current_active_user, get_current_admin_user
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -43,10 +49,10 @@ router = APIRouter(prefix="/products", tags=["products"])
                         "is_featured": False,
                         "slug": "wireless-headphones",
                         "created_at": "2024-01-01T12:00:00.000Z",
-                        "updated_at": "2024-01-01T12:00:00.000Z"
+                        "updated_at": "2024-01-01T12:00:00.000Z",
                     }
                 }
-            }
+            },
         },
         400: {
             "description": "Validation error or duplicate SKU/slug",
@@ -54,22 +60,20 @@ router = APIRouter(prefix="/products", tags=["products"])
                 "application/json": {
                     "example": {"detail": "Product with this SKU already exists"}
                 }
-            }
+            },
         },
         403: {
             "description": "Admin privileges required",
             "content": {
-                "application/json": {
-                    "example": {"detail": "Admin privileges required"}
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Admin privileges required"}}
+            },
+        },
+    },
 )
 async def create_product(
     product_data: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Create a new product in the catalog.
@@ -115,30 +119,43 @@ async def create_product(
                                 "stock_quantity": 50,
                                 "is_active": True,
                                 "is_featured": True,
-                                "slug": "wireless-headphones"
+                                "slug": "wireless-headphones",
                             }
                         ],
                         "total": 1,
                         "skip": 0,
                         "limit": 100,
-                        "has_next": False
+                        "has_next": False,
                     }
                 }
-            }
+            },
         }
-    }
+    },
 )
 async def get_products(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Maximum number of records to return"),
+    limit: int = Query(
+        100, ge=1, le=100, description="Maximum number of records to return"
+    ),
     category_id: Optional[int] = Query(None, description="Filter by category ID"),
-    min_price: Optional[Decimal] = Query(None, ge=0, description="Minimum price filter"),
-    max_price: Optional[Decimal] = Query(None, gt=0, description="Maximum price filter"),
-    in_stock: Optional[bool] = Query(None, description="Filter by stock availability (true=in stock, false=out of stock)"),
+    min_price: Optional[Decimal] = Query(
+        None, ge=0, description="Minimum price filter"
+    ),
+    max_price: Optional[Decimal] = Query(
+        None, gt=0, description="Maximum price filter"
+    ),
+    in_stock: Optional[bool] = Query(
+        None,
+        description="Filter by stock availability (true=in stock, false=out of stock)",
+    ),
     is_featured: Optional[bool] = Query(None, description="Filter by featured status"),
-    is_active: Optional[bool] = Query(True, description="Filter by active status (defaults to true)"),
-    search: Optional[str] = Query(None, description="Search term for product name, description, or SKU"),
-    db: Session = Depends(get_db)
+    is_active: Optional[bool] = Query(
+        True, description="Filter by active status (defaults to true)"
+    ),
+    search: Optional[str] = Query(
+        None, description="Search term for product name, description, or SKU"
+    ),
+    db: Session = Depends(get_db),
 ):
     """
     Get paginated list of products with comprehensive filtering.
@@ -172,21 +189,18 @@ async def get_products(
         in_stock=in_stock,
         is_featured=is_featured,
         is_active=is_active,
-        search=search
+        search=search,
     )
 
-    return ProductService.get_products(
-        db=db,
-        skip=skip,
-        limit=limit,
-        filters=filters
-    )
+    return ProductService.get_products(db=db, skip=skip, limit=limit, filters=filters)
 
 
 @router.get("/featured", response_model=list[ProductResponse])
 async def get_featured_products(
-    limit: int = Query(10, ge=1, le=50, description="Number of featured products to return"),
-    db: Session = Depends(get_db)
+    limit: int = Query(
+        10, ge=1, le=50, description="Number of featured products to return"
+    ),
+    db: Session = Depends(get_db),
 ):
     """
     Get featured products.
@@ -206,9 +220,11 @@ async def get_featured_products(
 
 @router.get("/low-stock", response_model=list[ProductResponse])
 async def get_low_stock_products(
-    limit: int = Query(50, ge=1, le=100, description="Number of low stock products to return"),
+    limit: int = Query(
+        50, ge=1, le=100, description="Number of low stock products to return"
+    ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Get products with low stock.
@@ -230,8 +246,10 @@ async def get_low_stock_products(
 @router.get("/search", response_model=list[ProductResponse])
 async def search_products(
     q: str = Query(..., min_length=1, description="Search query"),
-    limit: int = Query(20, ge=1, le=50, description="Number of search results to return"),
-    db: Session = Depends(get_db)
+    limit: int = Query(
+        20, ge=1, le=50, description="Number of search results to return"
+    ),
+    db: Session = Depends(get_db),
 ):
     """
     Search products by name, description, or SKU.
@@ -251,10 +269,7 @@ async def search_products(
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
-async def get_product(
-    product_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_product(product_id: int, db: Session = Depends(get_db)):
     """
     Get a product by ID.
 
@@ -273,17 +288,13 @@ async def get_product(
     product = ProductService.get_product(db, product_id)
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
     return product
 
 
 @router.get("/slug/{slug}", response_model=ProductResponse)
-async def get_product_by_slug(
-    slug: str,
-    db: Session = Depends(get_db)
-):
+async def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
     """
     Get a product by slug.
 
@@ -302,8 +313,7 @@ async def get_product_by_slug(
     product = ProductService.get_product_by_slug(db, slug)
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
     return product
 
@@ -312,7 +322,7 @@ async def get_product_by_slug(
 async def get_product_by_sku(
     sku: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Get a product by SKU.
@@ -333,8 +343,7 @@ async def get_product_by_sku(
     product = ProductService.get_product_by_sku(db, sku)
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
     return product
 
@@ -344,7 +353,7 @@ async def update_product(
     product_id: int,
     product_data: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Update a product.
@@ -371,7 +380,7 @@ async def update_product_stock(
     product_id: int,
     stock_data: StockUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Update product stock quantity.
@@ -397,7 +406,7 @@ async def update_product_stock(
 async def delete_product(
     product_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_user),
 ):
     """
     Delete a product.

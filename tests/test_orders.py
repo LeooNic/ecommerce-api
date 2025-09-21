@@ -2,19 +2,20 @@
 Tests for order functionality.
 """
 
-import pytest
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from unittest.mock import patch, MagicMock
 
-from app.models.user import User
-from app.models.product import Product
 from app.models.cart import Cart, CartItem
 from app.models.order import Order, OrderItem, OrderStatus, PaymentStatus
+from app.models.product import Product
+from app.models.user import User
+from app.schemas.order import CheckoutRequest, OrderUpdate, PaymentResponse
 from app.services.order_service import OrderService
 from app.services.payment_service import PaymentService
-from app.schemas.order import CheckoutRequest, OrderUpdate, PaymentResponse
 
 
 class TestPaymentService:
@@ -25,13 +26,13 @@ class TestPaymentService:
         payment_service = PaymentService()
 
         # Mock random to ensure success
-        with patch('app.services.payment_service.random') as mock_random:
+        with patch("app.services.payment_service.random") as mock_random:
             mock_random.return_value = 0.5  # Below success rate
 
             from app.schemas.order import PaymentRequest
+
             request = PaymentRequest(
-                payment_method="credit_card",
-                amount=Decimal("100.00")
+                payment_method="credit_card", amount=Decimal("100.00")
             )
 
             response = payment_service.process_payment(request)
@@ -45,13 +46,13 @@ class TestPaymentService:
         payment_service = PaymentService()
 
         # Mock random to ensure failure
-        with patch('app.services.payment_service.random') as mock_random:
+        with patch("app.services.payment_service.random") as mock_random:
             mock_random.return_value = 0.99  # Above success rate
 
             from app.schemas.order import PaymentRequest
+
             request = PaymentRequest(
-                payment_method="credit_card",
-                amount=Decimal("100.00")
+                payment_method="credit_card", amount=Decimal("100.00")
             )
 
             response = payment_service.process_payment(request)
@@ -64,9 +65,9 @@ class TestPaymentService:
         payment_service = PaymentService()
 
         from app.schemas.order import PaymentRequest
+
         request = PaymentRequest(
-            payment_method="unsupported_method",
-            amount=Decimal("100.00")
+            payment_method="unsupported_method", amount=Decimal("100.00")
         )
 
         response = payment_service.process_payment(request)
@@ -95,7 +96,7 @@ class TestPaymentService:
         payment_service = PaymentService()
 
         # Mock random to ensure success
-        with patch('app.services.payment_service.random') as mock_random:
+        with patch("app.services.payment_service.random") as mock_random:
             mock_random.return_value = 0.5
 
             response = payment_service.refund_payment("txn_123", Decimal("50.00"))
@@ -107,7 +108,9 @@ class TestPaymentService:
 class TestOrderService:
     """Test order service functionality."""
 
-    def test_create_order_from_cart(self, db_session: Session, test_user: User, test_product: Product):
+    def test_create_order_from_cart(
+        self, db_session: Session, test_user: User, test_product: Product
+    ):
         """Test creating order from cart."""
         order_service = OrderService(db_session)
 
@@ -120,7 +123,7 @@ class TestOrderService:
             cart_id=cart.id,
             product_id=test_product.id,
             quantity=2,
-            unit_price=test_product.price
+            unit_price=test_product.price,
         )
         db_session.add(cart_item)
         db_session.commit()
@@ -128,11 +131,13 @@ class TestOrderService:
         # Create checkout request
         checkout_request = CheckoutRequest(
             shipping_address="123 Test St, Test City, TC 12345",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
 
         # Create order
-        order_response = order_service.create_order_from_cart(test_user.id, checkout_request)
+        order_response = order_service.create_order_from_cart(
+            test_user.id, checkout_request
+        )
 
         assert order_response.status == OrderStatus.PENDING
         assert order_response.payment_status == PaymentStatus.PENDING
@@ -154,14 +159,16 @@ class TestOrderService:
 
         checkout_request = CheckoutRequest(
             shipping_address="123 Test St, Test City, TC 12345",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
 
         with pytest.raises(Exception) as exc_info:
             order_service.create_order_from_cart(test_user.id, checkout_request)
         assert "Cart is empty" in str(exc_info.value)
 
-    def test_create_order_insufficient_stock(self, db_session: Session, test_user: User, test_product: Product):
+    def test_create_order_insufficient_stock(
+        self, db_session: Session, test_user: User, test_product: Product
+    ):
         """Test creating order with insufficient stock."""
         order_service = OrderService(db_session)
 
@@ -174,21 +181,23 @@ class TestOrderService:
             cart_id=cart.id,
             product_id=test_product.id,
             quantity=test_product.stock_quantity + 1,
-            unit_price=test_product.price
+            unit_price=test_product.price,
         )
         db_session.add(cart_item)
         db_session.commit()
 
         checkout_request = CheckoutRequest(
             shipping_address="123 Test St, Test City, TC 12345",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
 
         with pytest.raises(Exception) as exc_info:
             order_service.create_order_from_cart(test_user.id, checkout_request)
         assert "Insufficient stock" in str(exc_info.value)
 
-    def test_process_payment_successful(self, db_session: Session, test_user: User, test_product: Product):
+    def test_process_payment_successful(
+        self, db_session: Session, test_user: User, test_product: Product
+    ):
         """Test successful payment processing."""
         order_service = OrderService(db_session)
 
@@ -203,18 +212,20 @@ class TestOrderService:
             shipping_amount=Decimal("5.00"),
             total_amount=Decimal("115.00"),
             shipping_address="123 Test St",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
         db_session.add(order)
         db_session.commit()
 
         # Mock successful payment
-        with patch.object(order_service.payment_service, 'process_payment') as mock_payment:
+        with patch.object(
+            order_service.payment_service, "process_payment"
+        ) as mock_payment:
             mock_payment.return_value = PaymentResponse(
                 transaction_id="txn_123",
                 status=PaymentStatus.COMPLETED,
                 amount=Decimal("115.00"),
-                message="Payment successful"
+                message="Payment successful",
             )
 
             order_response = order_service.process_payment(test_user.id, order.id)
@@ -223,7 +234,9 @@ class TestOrderService:
             assert order_response.payment_status == PaymentStatus.COMPLETED
             assert order_response.payment_transaction_id == "txn_123"
 
-    def test_process_payment_failed(self, db_session: Session, test_user: User, test_product: Product):
+    def test_process_payment_failed(
+        self, db_session: Session, test_user: User, test_product: Product
+    ):
         """Test failed payment processing."""
         order_service = OrderService(db_session)
 
@@ -238,7 +251,7 @@ class TestOrderService:
             shipping_amount=Decimal("5.00"),
             total_amount=Decimal("115.00"),
             shipping_address="123 Test St",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
         db_session.add(order)
         db_session.flush()
@@ -250,7 +263,7 @@ class TestOrderService:
             unit_price=test_product.price,
             total_price=test_product.price * 2,
             product_name=test_product.name,
-            product_sku=test_product.sku
+            product_sku=test_product.sku,
         )
         db_session.add(order_item)
         db_session.commit()
@@ -258,12 +271,14 @@ class TestOrderService:
         original_stock = test_product.stock_quantity
 
         # Mock failed payment
-        with patch.object(order_service.payment_service, 'process_payment') as mock_payment:
+        with patch.object(
+            order_service.payment_service, "process_payment"
+        ) as mock_payment:
             mock_payment.return_value = PaymentResponse(
                 transaction_id="txn_failed",
                 status=PaymentStatus.FAILED,
                 amount=Decimal("115.00"),
-                message="Payment failed: Insufficient funds"
+                message="Payment failed: Insufficient funds",
             )
 
             with pytest.raises(Exception) as exc_info:
@@ -289,7 +304,7 @@ class TestOrderService:
             shipping_amount=Decimal("5.00"),
             total_amount=Decimal("115.00"),
             shipping_address="123 Test St",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
         order2 = Order(
             order_number="ORD-TEST-002",
@@ -301,7 +316,7 @@ class TestOrderService:
             shipping_amount=Decimal("0.00"),
             total_amount=Decimal("55.00"),
             shipping_address="456 Test Ave",
-            payment_method="paypal"
+            payment_method="paypal",
         )
         db_session.add_all([order1, order2])
         db_session.commit()
@@ -311,7 +326,9 @@ class TestOrderService:
         assert len(orders) == 2
         assert orders[0].order_number in ["ORD-TEST-001", "ORD-TEST-002"]
 
-    def test_cancel_order(self, db_session: Session, test_user: User, test_product: Product):
+    def test_cancel_order(
+        self, db_session: Session, test_user: User, test_product: Product
+    ):
         """Test cancelling order."""
         order_service = OrderService(db_session)
 
@@ -326,7 +343,7 @@ class TestOrderService:
             shipping_amount=Decimal("5.00"),
             total_amount=Decimal("115.00"),
             shipping_address="123 Test St",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
         db_session.add(order)
         db_session.flush()
@@ -338,7 +355,7 @@ class TestOrderService:
             unit_price=test_product.price,
             total_price=test_product.price * 2,
             product_name=test_product.name,
-            product_sku=test_product.sku
+            product_sku=test_product.sku,
         )
         db_session.add(order_item)
         db_session.commit()
@@ -369,7 +386,7 @@ class TestOrderService:
             shipping_amount=Decimal("5.00"),
             total_amount=Decimal("115.00"),
             shipping_address="123 Test St",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
         db_session.add(order)
         db_session.commit()
@@ -396,7 +413,7 @@ class TestOrderService:
             shipping_amount=Decimal("5.00"),
             total_amount=Decimal("115.00"),
             shipping_address="123 Test St",
-            payment_method="credit_card"
+            payment_method="credit_card",
         )
         db_session.add(order)
         db_session.commit()
@@ -412,24 +429,29 @@ class TestOrderService:
 class TestOrderAPI:
     """Test order API endpoints."""
 
-    def test_checkout_api(self, client: TestClient, test_user_token: str, test_product: Product, db_session: Session):
+    def test_checkout_api(
+        self,
+        client: TestClient,
+        test_user_token: str,
+        test_product: Product,
+        db_session: Session,
+    ):
         """Test checkout API endpoint."""
         headers = {"Authorization": f"Bearer {test_user_token}"}
 
         # Add item to cart first
-        add_payload = {
-            "product_id": test_product.id,
-            "quantity": 2
-        }
+        add_payload = {"product_id": test_product.id, "quantity": 2}
         client.post("/api/v1/cart/add", json=add_payload, headers=headers)
 
         # Checkout
         checkout_payload = {
             "shipping_address": "123 Test St, Test City, TC 12345",
-            "payment_method": "credit_card"
+            "payment_method": "credit_card",
         }
 
-        response = client.post("/api/v1/orders/checkout", json=checkout_payload, headers=headers)
+        response = client.post(
+            "/api/v1/orders/checkout", json=checkout_payload, headers=headers
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -443,32 +465,35 @@ class TestOrderAPI:
 
         checkout_payload = {
             "shipping_address": "123 Test St, Test City, TC 12345",
-            "payment_method": "credit_card"
+            "payment_method": "credit_card",
         }
 
-        response = client.post("/api/v1/orders/checkout", json=checkout_payload, headers=headers)
+        response = client.post(
+            "/api/v1/orders/checkout", json=checkout_payload, headers=headers
+        )
         assert response.status_code == 400
 
-    def test_pay_order_api(self, client: TestClient, test_user_token: str, test_product: Product):
+    def test_pay_order_api(
+        self, client: TestClient, test_user_token: str, test_product: Product
+    ):
         """Test pay order API endpoint."""
         headers = {"Authorization": f"Bearer {test_user_token}"}
 
         # Create order first
-        add_payload = {
-            "product_id": test_product.id,
-            "quantity": 2
-        }
+        add_payload = {"product_id": test_product.id, "quantity": 2}
         client.post("/api/v1/cart/add", json=add_payload, headers=headers)
 
         checkout_payload = {
             "shipping_address": "123 Test St, Test City, TC 12345",
-            "payment_method": "credit_card"
+            "payment_method": "credit_card",
         }
-        checkout_response = client.post("/api/v1/orders/checkout", json=checkout_payload, headers=headers)
+        checkout_response = client.post(
+            "/api/v1/orders/checkout", json=checkout_payload, headers=headers
+        )
         order_id = checkout_response.json()["id"]
 
         # Mock successful payment
-        with patch('app.services.payment_service.random') as mock_random:
+        with patch("app.services.payment_service.random") as mock_random:
             mock_random.return_value = 0.5  # Ensure success
 
             response = client.post(f"/api/v1/orders/{order_id}/pay", headers=headers)
@@ -500,8 +525,8 @@ class TestOrderAPI:
         response = client.get("/api/v1/orders/")
         assert response.status_code == 403
 
-        response = client.post("/api/v1/orders/checkout", json={
-            "shipping_address": "123 Test St",
-            "payment_method": "credit_card"
-        })
+        response = client.post(
+            "/api/v1/orders/checkout",
+            json={"shipping_address": "123 Test St", "payment_method": "credit_card"},
+        )
         assert response.status_code == 403

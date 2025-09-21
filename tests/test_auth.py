@@ -6,7 +6,7 @@ import pytest
 from fastapi import status
 
 from app.models.user import User, UserRole
-from app.utils.auth import verify_password, get_password_hash, verify_token
+from app.utils.auth import get_password_hash, verify_password, verify_token
 
 
 class TestUserRegistration:
@@ -44,7 +44,9 @@ class TestUserRegistration:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "Email already registered" in response.json()["detail"]
 
-    def test_register_user_duplicate_username(self, client, test_user_data, created_user):
+    def test_register_user_duplicate_username(
+        self, client, test_user_data, created_user
+    ):
         """Test registration with duplicate username."""
         different_email_data = test_user_data.copy()
         different_email_data["email"] = "different@example.com"
@@ -90,7 +92,7 @@ class TestUserLogin:
         """Test successful login."""
         login_data = {
             "email": test_user_data["email"],
-            "password": test_user_data["password"]
+            "password": test_user_data["password"],
         }
 
         response = client.post("/api/v1/auth/login", json=login_data)
@@ -111,10 +113,7 @@ class TestUserLogin:
 
     def test_login_wrong_email(self, client, created_user):
         """Test login with wrong email."""
-        login_data = {
-            "email": "wrong@example.com",
-            "password": "testpassword123"
-        }
+        login_data = {"email": "wrong@example.com", "password": "testpassword123"}
 
         response = client.post("/api/v1/auth/login", json=login_data)
 
@@ -123,10 +122,7 @@ class TestUserLogin:
 
     def test_login_wrong_password(self, client, created_user, test_user_data):
         """Test login with wrong password."""
-        login_data = {
-            "email": test_user_data["email"],
-            "password": "wrongpassword"
-        }
+        login_data = {"email": test_user_data["email"], "password": "wrongpassword"}
 
         response = client.post("/api/v1/auth/login", json=login_data)
 
@@ -143,7 +139,7 @@ class TestUserLogin:
             last_name=test_user_data["last_name"],
             hashed_password=get_password_hash(test_user_data["password"]),
             role=test_user_data["role"],
-            is_active=False
+            is_active=False,
         )
 
         db_session.add(user)
@@ -151,7 +147,7 @@ class TestUserLogin:
 
         login_data = {
             "email": test_user_data["email"],
-            "password": test_user_data["password"]
+            "password": test_user_data["password"],
         }
 
         response = client.post("/api/v1/auth/login", json=login_data)
@@ -255,7 +251,7 @@ class TestUserModel:
             first_name=test_user_data["first_name"],
             last_name=test_user_data["last_name"],
             hashed_password=get_password_hash(test_user_data["password"]),
-            role=test_user_data["role"]
+            role=test_user_data["role"],
         )
 
         db_session.add(user)
